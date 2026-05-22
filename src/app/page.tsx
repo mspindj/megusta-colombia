@@ -323,7 +323,7 @@ export default function Home() {
             }}
           />
         ))}
-        <div className="absolute inset-0 bg-background/85" />
+        <div className="absolute inset-0" style={{ background: "rgba(10,10,10,0.65)" }} />
         <motion.div
           className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 text-center py-32"
           variants={heroStagger}
