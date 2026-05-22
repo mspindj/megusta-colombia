@@ -36,8 +36,20 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local MCP config (contains secrets)
+.mcp.json
+
 # reference files (PDFs, brand assets - do not publish)
 /reference
+
+# large media and local assets - do not commit
+/PDFs
+/posts
+/music
+/editor-pro-max-main
+/editor-pro-max-main.zip
+/social assets
+docs/reels/audio/
 
 # typescript
 *.tsbuildinfo

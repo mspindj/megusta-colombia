@@ -1,0 +1,56 @@
+{
+  "project": "megusta-colombia",
+  "last_updated": "2026-05-22",
+  "features": [
+    {
+      "id": "content-ideas-table",
+      "title": "Tabla content_ideas en Supabase",
+      "status": "done",
+      "execution_mode": "inline",
+      "priority": "high",
+      "notes": "Creada 2026-05-21. Campos: id, source, origin, title, url, score, content_type, status, generated_copy, generated_hashtags, notes, timestamps."
+    },
+    {
+      "id": "intel-gather-edge-function",
+      "title": "Edge Function: intel-gather (Apify → content_ideas)",
+      "status": "done",
+      "execution_mode": "sdd",
+      "priority": "high",
+      "notes": "pg_cron lunes 8am → Apify Reddit scraper (r/Colombia, r/bogota, r/medellin, r/digitalnomad) → filtra score>10 → INSERT content_ideas → notifica via Brevo a mspin.dj@gmail.com. Implementado 2026-05-21. Pendiente: deploy + secrets + pg_cron SQL."
+    },
+    {
+      "id": "generate-copy-edge-function",
+      "title": "Edge Function: generate-copy (idea aprobada → content_queue)",
+      "status": "done",
+      "execution_mode": "sdd",
+      "priority": "high",
+      "notes": "DB trigger on_idea_approved → idea-to-queue → Claude Haiku (caption+hashtags+hook) → Satori 1080x1080 PNG → Supabase Storage → content_queue. Implementado y deployado 2026-05-22. Función ACTIVE, trigger on_idea_approved confirmado en DB."
+    },
+    {
+      "id": "colombia-taxi-calculator",
+      "title": "Mini-app: Calculadora de taxis Colombia",
+      "status": "spec_ready",
+      "execution_mode": "sdd",
+      "priority": "medium",
+      "notes": "Página en megusta.com.co/taxi. Input: barrio origen + destino + ciudad. Output: precio justo vs precio gringo. Captura email → Brevo funnel → upsell guía. Meta Pixel desde día 1. BLOQUEANTE: META_PAGE_TOKEN en Supabase secrets está inválido — renovar antes de arrancar spec."
+    },
+    {
+      "id": "colombia-reel-template",
+      "title": "Composición ColombiaReel parametrizada (Remotion)",
+      "status": "pending",
+      "execution_mode": "sdd",
+      "priority": "medium",
+      "notes": "Refactor composiciones hardcodeadas → template genérico con props: hook, script[], city, audioUrl, mapUrl. Prerequisito del render server.",
+      "blocks": ["remotion-render-server"]
+    },
+    {
+      "id": "remotion-render-server",
+      "title": "Servidor de render Remotion en Render.com",
+      "status": "pending",
+      "execution_mode": "sdd",
+      "priority": "medium",
+      "notes": "Express server: POST /render → remotion render ColombiaReel → upload Supabase Storage → devuelve video_url. Deploy Render.com free tier.",
+      "blocked_by": ["colombia-reel-template"]
+    }
+  ]
+}
