@@ -1,355 +1,1054 @@
-const CITIES = [
+"use client";
+
+import { useState, useEffect } from "react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import {
+  motion,
+  useScroll,
+  useMotionValueEvent,
+  useReducedMotion,
+  AnimatePresence,
+} from "framer-motion";
+import CountUp from "@/app/components/CountUp";
+import {
+  sectionVariants,
+  heroChildVariants,
+  heroStagger,
+  staggerContainer,
+  fadeUpItem,
+  slideFromLeft,
+  slideFromRight,
+  scaleReveal,
+  viewportOnce,
+} from "@/lib/animations";
+
+// Images served from /public/assets/
+const bogBanner = "/assets/BOG_1280x360.png";
+const mdeBanner = "/assets/MDE_1280x360.png";
+const ctgBanner = "/assets/CTG_1280x360.png";
+const heroBg = "/assets/bogota_background.jpg";
+const mdeBg = "/assets/medellin_background.jpg";
+const ctgBg = "/assets/cartagena_background.jpg";
+
+const heroBgs = [heroBg, mdeBg, ctgBg];
+
+const chapters = [
+  { num: "01", title: "Airport arrival & transport" },
+  { num: "02", title: "Climate & physical orientation" },
+  { num: "03", title: "Street vendor & hustle navigation" },
+  { num: "04", title: "Local language & codes" },
+  { num: "05", title: "Nightlife & safe zones" },
+  { num: "06", title: "Logistics & day trips" },
+  { num: "07", title: "Food & health" },
+  { num: "08", title: "Local mindset & cultural DNA" },
+  { num: "09", title: "Emergencies & contacts" },
+];
+
+const cities = [
   {
-    name: "Bogotá",
     code: "BOG-72H",
+    name: "Bogotá",
     tagline: '"No dar papaya"',
-    color: "text-red-accent",
-    borderColor: "border-red-accent/30",
-    url: "https://megustacomco.gumroad.com/l/bogota72hours",
-    status: "live" as const,
+    price: "$17",
+    accent: "bogota",
+    banner: bogBanner,
+    link: "https://megustacomco.gumroad.com/l/bogota72hours",
+    available: true,
   },
   {
-    name: "Medellín",
     code: "MDE-72H",
+    name: "Medellín",
     tagline: '"The Mirage is real"',
-    color: "text-green-accent",
-    borderColor: "border-green-accent/30",
-    url: "https://megustacomco.gumroad.com/l/medellin-survival-vault",
-    status: "live" as const,
+    price: "$17",
+    accent: "medellin",
+    banner: mdeBanner,
+    link: "https://megustacomco.gumroad.com/l/medellin-survival-vault",
+    available: true,
   },
   {
-    name: "Cartagena",
     code: "CTG-72H",
+    name: "Cartagena",
     tagline: '"Cógela Suave"',
-    color: "text-blue-accent",
-    borderColor: "border-blue-accent/30",
-    url: "https://megustacomco.gumroad.com/l/cartagena-survival-vault",
-    status: "live" as const,
+    price: "$17",
+    accent: "cartagena",
+    banner: ctgBanner,
+    link: "https://megustacomco.gumroad.com/l/cartagena-survival-vault",
+    available: true,
   },
   {
-    name: "Cali",
     code: "CLO-72H",
+    name: "Cali",
     tagline: "Coming soon",
-    color: "text-text-muted",
-    borderColor: "border-border",
-    url: "#",
-    status: "soon" as const,
+    price: "",
+    accent: "",
+    banner: "",
+    link: "",
+    available: false,
   },
   {
-    name: "Santa Marta",
     code: "SMR-72H",
+    name: "Santa Marta",
     tagline: "Coming soon",
-    color: "text-text-muted",
-    borderColor: "border-border",
-    url: "#",
-    status: "soon" as const,
+    price: "",
+    accent: "",
+    banner: "",
+    link: "",
+    available: false,
   },
   {
-    name: "San Andrés",
     code: "ADZ-72H",
+    name: "San Andrés",
     tagline: "Coming soon",
-    color: "text-text-muted",
-    borderColor: "border-border",
-    url: "#",
-    status: "soon" as const,
+    price: "",
+    accent: "",
+    banner: "",
+    link: "",
+    available: false,
   },
 ];
 
-const CHAPTERS = [
-  "Airport arrival & transport",
-  "Climate & physical orientation",
-  "Street vendor & hustle navigation",
-  "Local language & codes",
-  "Nightlife & safe zones",
-  "Logistics & day trips",
-  "Food & health",
-  "Local mindset & cultural DNA",
-  "Emergencies & contacts",
+const faqs = [
+  {
+    q: "Is this a regular travel guide?",
+    a: "No. This tells you how to survive — scam-free, stress-free. No fluff about the best Instagram spots.",
+  },
+  {
+    q: "I already checked Reddit. Why pay?",
+    a: "Reddit has fragments across 200 threads from 2019. This is curated, structured, and current.",
+  },
+  {
+    q: "What format is it?",
+    a: "Downloadable PDF. Read on your phone on the plane.",
+  },
+  {
+    q: "Can I get a refund?",
+    a: "Digital product, all sales final. At $17, it's less than a bad taxi ride.",
+  },
+  {
+    q: "Who made this?",
+    a: "Locals who watched tourists make the same mistakes for years.",
+  },
 ];
+
+const testimonials = [
+  {
+    name: "Jake R.",
+    location: "Austin, TX",
+    badge: "BOG-72H",
+    badgeAccent: "bogota",
+    quote:
+      "A moto-taxi driver tried to charge me $40 from the airport. I already knew from the guide that the official taxi counter price was $8. Paid $8, kept $32. Guide paid for itself in literally 10 minutes.",
+    keyResult: "Saved $32 in 10 minutes",
+  },
+  {
+    name: "Sarah L.",
+    location: "London, UK",
+    badge: "MDE-72H",
+    badgeAccent: "medellin",
+    quote:
+      "My friends who didn't read it ended up in the wrong neighborhood on night one and had to Uber back to Poblado. I went straight to the right zones — the nightlife chapter is worth the entire price.",
+    keyResult: "Knew exactly where to go on night one",
+  },
+  {
+    name: "Marcus W.",
+    location: "Toronto, CA",
+    badge: "CTG-72H",
+    badgeAccent: "cartagena",
+    quote:
+      "Other tourists on my boat to Rosario paid 180,000 COP. I negotiated 95,000 because the guide told me the real price and the exact phrase to use. The vendor negotiation section alone is worth 10x the guide price.",
+    keyResult: "Paid almost half what other tourists paid",
+  },
+  {
+    name: "Emma K.",
+    location: "Sydney, AU",
+    badge: "BOG-72H",
+    badgeAccent: "bogota",
+    quote:
+      "Downloaded it on the plane from Sydney. By the time I landed at El Dorado I felt like I'd already been there a week. No anxiety at immigration, no confusion with the SIM card, no taxi scam. Just ready.",
+    keyResult: "Felt like I'd already been there",
+  },
+];
+
+const badgeBgClass: Record<string, string> = {
+  bogota: "bg-[#c0392b]/20 text-[#c0392b]",
+  medellin: "bg-[#27ae60]/20 text-[#27ae60]",
+  cartagena: "bg-[#2980b9]/20 text-[#2980b9]",
+};
+
+const accentBorderClass: Record<string, string> = {
+  bogota: "border-[#c0392b]",
+  medellin: "border-[#27ae60]",
+  cartagena: "border-[#2980b9]",
+};
+
+const accentTextClass: Record<string, string> = {
+  bogota: "text-[#c0392b]",
+  medellin: "text-[#27ae60]",
+  cartagena: "text-[#2980b9]",
+};
+
+const cityHoverShadow: Record<string, string> = {
+  bogota: "0 0 20px rgba(192, 57, 43, 0.2)",
+  medellin: "0 0 20px rgba(39, 174, 96, 0.2)",
+  cartagena: "0 0 20px rgba(41, 128, 185, 0.2)",
+};
 
 export default function Home() {
+  const [scrolled, setScrolled] = useState(false);
+  const [bgIndex, setBgIndex] = useState(0);
+  const [showChevron, setShowChevron] = useState(true);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadStatus, setLeadStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [leadError, setLeadError] = useState("");
+  const prefersReducedMotion = useReducedMotion();
+  const { scrollY } = useScroll();
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    if (latest > 300 && showChevron) setShowChevron(false);
+    setShowBackToTop(latest > 600);
+  });
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setBgIndex((i) => (i + 1) % 3), 4000);
+    return () => clearInterval(id);
+  }, []);
+
+  const scrollToCity = () => {
+    document.getElementById("cities")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleLeadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!leadEmail || !leadEmail.includes("@")) {
+      setLeadError("Enter a valid email address");
+      setLeadStatus("error");
+      return;
+    }
+    setLeadStatus("loading");
+    setLeadError("");
+    try {
+      const response = await fetch(
+        "https://uocwxwvcrnkfnnoyjzyb.supabase.co/functions/v1/subscribe",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: leadEmail.trim() }),
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        setLeadStatus("success");
+      } else {
+        setLeadError(
+          data.error ||
+            "Something went wrong. Try again or email hola@megusta.com.co"
+        );
+        setLeadStatus("error");
+      }
+    } catch {
+      setLeadError(
+        "Connection error. Try again or email hola@megusta.com.co"
+      );
+      setLeadStatus("error");
+    }
+  };
+
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen bg-background text-foreground">
       {/* NAV */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-bg-dark/90 backdrop-blur-sm border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <span className="font-mono text-sm tracking-widest text-gold uppercase">
-            Me Gusta Colombia
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out ${
+          scrolled
+            ? "bg-background/90 backdrop-blur-md border-b border-border"
+            : "bg-transparent"
+        }`}
+      >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <span className="font-mono font-bold text-primary tracking-[0.25em] text-xs sm:text-sm">
+            ME GUSTA COLOMBIA
           </span>
-          <a
-            href="#cities"
-            className="text-sm text-text-secondary hover:text-gold transition-colors"
-          >
-            Get Intel
-          </a>
+          <div className="flex items-center gap-4">
+            <a
+              href="#free-intel"
+              onClick={(e) => {
+                e.preventDefault();
+                document
+                  .getElementById("free-intel")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="font-mono text-xs text-primary/70 hover:text-primary transition-colors tracking-wider hidden sm:inline"
+            >
+              FREE INTEL
+            </a>
+            <a
+              href="#cities"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToCity();
+              }}
+              className="font-mono text-xs text-primary hover:text-primary/80 transition-colors tracking-wider"
+            >
+              GET INTEL →
+            </a>
+          </div>
         </div>
       </nav>
 
       {/* HERO */}
-      <section className="relative flex flex-col items-center justify-center min-h-screen px-6 pt-14">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(212,168,67,0.06)_0%,_transparent_70%)]" />
-        <div className="relative max-w-3xl mx-auto text-center">
-          <p className="font-mono text-xs tracking-[0.3em] text-gold-dim uppercase mb-6">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {heroBgs.map((bg, i) => (
+          <div
+            key={i}
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
+            style={{
+              backgroundImage: `url(${bg})`,
+              opacity: bgIndex === i ? 1 : 0,
+            }}
+          />
+        ))}
+        <div className="absolute inset-0 bg-background/85" />
+        <motion.div
+          className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 text-center py-32"
+          variants={heroStagger}
+          initial={prefersReducedMotion ? false : "hidden"}
+          animate="visible"
+          style={{ willChange: "transform" }}
+        >
+          <motion.p
+            variants={heroChildVariants}
+            className="font-mono text-xs tracking-[0.3em] uppercase text-primary/60 mb-4"
+          >
+            For travelers who refuse to wing it
+          </motion.p>
+          <motion.p
+            variants={heroChildVariants}
+            className="font-mono text-xs sm:text-sm text-primary tracking-[0.3em] mb-6 uppercase"
+          >
             Classified // First-Timer Protocol
-          </p>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight mb-6">
-            Your first 72 hours
-            <br />
-            <span className="text-gold">will make or break</span>
-            <br />
-            your trip to Colombia.
-          </h1>
-          <p className="text-lg sm:text-xl text-text-secondary max-w-xl mx-auto mb-10 leading-relaxed">
-            Not a tourist guide. This is{" "}
-            <span className="text-text-primary font-medium">
-              tactical local intelligence
-            </span>{" "}
-            — the cheat codes that locals don&apos;t post on TripAdvisor.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="#cities"
-              className="inline-flex items-center justify-center h-12 px-8 bg-gold text-black font-semibold rounded hover:bg-gold-light transition-colors"
+          </motion.p>
+          <motion.h1
+            variants={heroChildVariants}
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6"
+          >
+            Tourists get scammed, overpay, and waste their first 3 days.
+            <br className="sm:hidden" />{" "}
+            <span className="text-primary">You won&apos;t.</span>
+          </motion.h1>
+          <motion.p
+            variants={heroChildVariants}
+            className="text-muted-foreground text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed"
+          >
+            Every city has cheat codes the locals don&apos;t post online. We
+            put them in a 72-hour tactical briefing — so you land prepared, not
+            panicked.
+          </motion.p>
+          <motion.div
+            variants={heroChildVariants}
+            className="flex items-center justify-center gap-4 font-mono text-xs text-muted-foreground mb-4"
+          >
+            <span>
+              <span className="text-foreground font-bold">
+                <CountUp end={2847} suffix="+" />
+              </span>{" "}
+              briefed
+            </span>
+            <span className="text-border">|</span>
+            <span>
+              ⭐{" "}
+              <span className="text-foreground font-bold">
+                <CountUp end={4.9} decimals={1} />
+              </span>{" "}
+              avg rating
+            </span>
+            <span className="text-border">|</span>
+            <span>
+              <span className="text-foreground font-bold">
+                <CountUp end={3} />
+              </span>{" "}
+              cities covered
+            </span>
+          </motion.div>
+          <motion.p
+            variants={heroChildVariants}
+            className="italic text-sm text-muted-foreground mb-8"
+          >
+            Your flight is booked. The clock started.
+          </motion.p>
+          <motion.div
+            variants={heroChildVariants}
+            className="flex flex-col sm:flex-row gap-4 justify-center mb-4"
+          >
+            <Button
+              size="lg"
+              className="font-mono tracking-wider text-sm"
+              onClick={scrollToCity}
             >
-              Choose Your City
-            </a>
+              GET YOUR CITY BRIEFING — $17
+            </Button>
             <a
-              href="#bundle"
-              className="inline-flex items-center justify-center h-12 px-8 border border-gold/30 text-gold font-medium rounded hover:bg-gold/10 transition-colors"
+              href="https://megustacomco.gumroad.com/l/explorer-bundle"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonVariants({ variant: "outline", size: "lg", className: "font-mono tracking-wider text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground" })}
             >
-              Explorer Bundle — $37
+              ALL 3 CITIES — $37 (SAVE 27%)
             </a>
-          </div>
-          <p className="mt-6 text-xs text-text-muted font-mono">
-            Instant PDF download. No fluff. No affiliate spam.
-          </p>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
-          <div className="w-px h-12 bg-gradient-to-b from-gold/50 to-transparent" />
-        </div>
+          </motion.div>
+          <motion.p
+            variants={heroChildVariants}
+            className="text-muted-foreground text-xs font-mono"
+          >
+            Takes 45 minutes to read. Covers your entire first 72 hours.
+          </motion.p>
+          {showChevron && (
+            <motion.div
+              className="mx-auto mt-16"
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <ChevronDown className="mx-auto w-6 h-6 text-muted-foreground" />
+            </motion.div>
+          )}
+        </motion.div>
       </section>
+
+      {/* GRADIENT DIVIDER */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
 
       {/* WHAT'S INSIDE */}
-      <section className="py-24 px-6 border-t border-border">
-        <div className="max-w-4xl mx-auto">
-          <p className="font-mono text-xs tracking-[0.3em] text-gold-dim uppercase mb-4">
-            Intel Structure // 9 Chapters
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            What&apos;s inside each file
-          </h2>
-          <p className="text-text-secondary mb-12 max-w-lg">
-            Every guide covers the same 9 tactical chapters, adapted with
-            city-specific intel, prices, zones, and local codes.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {CHAPTERS.map((chapter, i) => (
-              <div
-                key={chapter}
-                className="flex items-start gap-3 p-4 rounded border border-border bg-bg-card"
+      <section className="py-20 sm:py-28">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <motion.div
+            variants={sectionVariants}
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView="visible"
+            viewport={viewportOnce}
+            style={{ willChange: "transform" }}
+          >
+            <p className="font-mono text-xs text-primary tracking-[0.3em] uppercase mb-3 text-center">
+              What&apos;s Inside
+            </p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-12">
+              9 chapters of local intel
+            </h2>
+          </motion.div>
+          <motion.div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            variants={staggerContainer(0.06)}
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView="visible"
+            viewport={viewportOnce}
+          >
+            {chapters.map((ch) => (
+              <motion.div
+                key={ch.num}
+                variants={fadeUpItem(0.5)}
+                className="bg-card border border-border rounded-lg p-5 hover:border-primary/40 transition-colors"
+                style={{ willChange: "transform" }}
               >
-                <span className="font-mono text-xs text-gold-dim mt-0.5">
-                  {String(i + 1).padStart(2, "0")}
+                <span className="font-mono text-primary text-sm font-bold">
+                  {ch.num}
                 </span>
-                <span className="text-sm text-text-primary">{chapter}</span>
-              </div>
+                <p className="mt-2 font-semibold text-foreground">{ch.title}</p>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* LOSS AVERSION SECTION */}
-      <section className="py-24 px-6 bg-bg-card border-y border-border">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-8">
-            What you <span className="text-red-accent">don&apos;t know</span>{" "}
-            costs more than a guide
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
-            <div className="p-5 rounded border border-border bg-bg-dark">
-              <p className="text-2xl font-bold text-red-accent mb-2">$40</p>
-              <p className="text-sm text-text-secondary">
-                What tourists pay for a taxi that should cost $8
-              </p>
-            </div>
-            <div className="p-5 rounded border border-border bg-bg-dark">
-              <p className="text-2xl font-bold text-red-accent mb-2">3 hrs</p>
-              <p className="text-sm text-text-secondary">
-                Average time lost on day 1 figuring out basics locals already
-                know
-              </p>
-            </div>
-            <div className="p-5 rounded border border-border bg-bg-dark">
-              <p className="text-2xl font-bold text-gold mb-2">$17</p>
-              <p className="text-sm text-text-secondary">
-                The cost of knowing everything before you land — less than a
-                lunch in Bogotá
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
 
-      {/* CITIES */}
-      <section id="cities" className="py-24 px-6">
-        <div className="max-w-4xl mx-auto">
-          <p className="font-mono text-xs tracking-[0.3em] text-gold-dim uppercase mb-4">
-            Select Target // City Files
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold mb-12">
-            Choose your city
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {CITIES.map((city) => (
-              <a
-                key={city.code}
-                href={city.url}
-                target={city.status === "live" ? "_blank" : undefined}
-                rel={city.status === "live" ? "noopener noreferrer" : undefined}
-                className={`group block p-6 rounded border ${city.borderColor} bg-bg-card transition-colors ${
-                  city.status === "live"
-                    ? "hover:bg-bg-card-hover cursor-pointer"
-                    : "opacity-50 cursor-default"
-                }`}
+      {/* TESTIMONIALS */}
+      <section className="py-20 sm:py-28 bg-card">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <motion.div
+            variants={sectionVariants}
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView="visible"
+            viewport={viewportOnce}
+            style={{ willChange: "transform" }}
+          >
+            <p className="font-mono text-xs text-primary tracking-[0.3em] uppercase mb-3 text-center">
+              Field Reports // Post-Landing Intel
+            </p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-12">
+              They landed prepared. Here&apos;s what happened.
+            </h2>
+          </motion.div>
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            variants={staggerContainer(0.1)}
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView="visible"
+            viewport={viewportOnce}
+          >
+            {testimonials.map((t, i) => (
+              <motion.div
+                key={i}
+                variants={fadeUpItem(0.6)}
+                className="bg-background border border-border rounded-lg p-6 border-l-[3px] border-l-primary hover:shadow-lg hover:shadow-primary/5 transition-all"
+                style={{ willChange: "transform" }}
               >
-                <p className="font-mono text-xs text-text-muted mb-2">
-                  {city.code}
+                <div className="flex items-center justify-between mb-3">
+                  <span
+                    className={`font-mono text-xs px-2.5 py-0.5 rounded-full ${badgeBgClass[t.badgeAccent]}`}
+                  >
+                    {t.badge}
+                  </span>
+                  <span className="text-primary text-sm tracking-wide">
+                    ★★★★★
+                  </span>
+                </div>
+                <p className="text-muted-foreground text-sm leading-relaxed italic mb-3">
+                  &ldquo;{t.quote}&rdquo;
                 </p>
-                <h3 className="text-xl font-bold mb-1">{city.name}</h3>
-                <p className={`text-sm italic ${city.color}`}>
-                  {city.tagline}
+                <p className="text-primary font-bold text-sm mb-4">
+                  → {t.keyResult}
                 </p>
-                {city.status === "live" ? (
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="text-lg font-bold text-gold">$17</span>
-                    <span className="text-xs text-text-secondary group-hover:text-gold transition-colors">
-                      Get Intel →
+                <p className="font-mono text-xs text-muted-foreground">
+                  {t.name} · {t.location}
+                </p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
+
+      {/* LOSS AVERSION — IDENTITY SPLIT */}
+      <section className="py-20 sm:py-28 bg-card">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <motion.div
+            variants={sectionVariants}
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView="visible"
+            viewport={viewportOnce}
+            style={{ willChange: "transform" }}
+          >
+            <p className="font-mono text-xs text-primary tracking-[0.3em] uppercase mb-3 text-center">
+              INTEL COST ANALYSIS
+            </p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-12">
+              Two types of travelers land in Colombia every day.
+            </h2>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+            {/* LEFT: The Tourist */}
+            <motion.div
+              className="bg-background border border-border rounded-t-lg md:rounded-l-lg md:rounded-tr-none p-6 sm:p-8"
+              variants={slideFromLeft}
+              initial={prefersReducedMotion ? false : "hidden"}
+              whileInView="visible"
+              viewport={viewportOnce}
+              style={{ willChange: "transform" }}
+            >
+              <h3 className="font-mono text-sm text-muted-foreground tracking-[0.2em] uppercase mb-6">
+                THE TOURIST
+              </h3>
+              <ul className="space-y-4">
+                {[
+                  "Pays $40 for a taxi that costs $8",
+                  "Wastes 3 hours figuring out basics on day 1",
+                  "Gets steered to overpriced restaurants by 'friendly' strangers",
+                  "Ends up in the wrong neighborhood after dark",
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="text-[#c0392b] font-bold text-sm mt-0.5">
+                      ✕
                     </span>
+                    <span className="text-muted-foreground text-sm">
+                      {item}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-6 text-xs text-[#c0392b]/80 font-mono">
+                Total cost of not knowing: $100+ and a ruined first impression
+              </p>
+            </motion.div>
+
+            {/* Mobile separator */}
+            <div className="md:hidden border-t border-border" />
+
+            {/* RIGHT: The Prepared Traveler */}
+            <motion.div
+              className="bg-background border border-border rounded-b-lg md:rounded-r-lg md:rounded-bl-none p-6 sm:p-8 border-l-0 md:border-l-[3px] md:border-l-primary"
+              variants={slideFromRight}
+              initial={prefersReducedMotion ? false : "hidden"}
+              whileInView="visible"
+              viewport={viewportOnce}
+              style={{ willChange: "transform" }}
+            >
+              <h3 className="font-mono text-sm text-primary tracking-[0.2em] uppercase mb-6">
+                THE PREPARED TRAVELER
+              </h3>
+              <ul className="space-y-4">
+                {[
+                  "Takes the $8 official taxi — knows the exact counter location",
+                  "Navigates like a local from hour one",
+                  "Eats where locals eat at local prices",
+                  "Knows exactly which zones are safe for nightlife",
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="text-primary font-bold text-sm mt-0.5">
+                      ✓
+                    </span>
+                    <span className="text-foreground text-sm">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-6 text-xs text-primary/80 font-mono">
+                Cost of preparation: $17 — less than that overpriced taxi ride
+              </p>
+            </motion.div>
+          </div>
+
+          {/* CTA */}
+          <motion.div
+            className="text-center mt-12"
+            variants={sectionVariants}
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView="visible"
+            viewport={viewportOnce}
+          >
+            <a
+              href="https://megustacomco.gumroad.com/l/colombia-arrival-cheat-sheet"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button
+                size="lg"
+                className="text-base font-bold tracking-wide px-8"
+              >
+                BECOME THE PREPARED TRAVELER
+              </Button>
+            </a>
+            <p className="font-mono text-xs text-muted-foreground mt-3">
+              Instant PDF download. Read it on the plane.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
+
+      {/* LEAD MAGNET */}
+      <section id="free-intel" className="py-24 bg-card scroll-mt-16">
+        <motion.div
+          variants={sectionVariants}
+          initial={prefersReducedMotion ? false : "hidden"}
+          whileInView="visible"
+          viewport={viewportOnce}
+          style={{ willChange: "transform" }}
+        >
+          <div className="max-w-xl mx-auto px-6 text-center">
+            <p className="font-mono text-xs text-primary/70 tracking-[0.3em] uppercase mb-3">
+              FREE INTEL // ARRIVAL CHEAT SHEET
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold mb-4">
+              Land in Colombia like you&apos;ve been before.
+            </h2>
+            <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
+              Free 1-page PDF — airport hacks, taxi prices, first-day survival
+              moves. No spam, just intel.
+            </p>
+
+            {leadStatus === "success" ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              >
+                <span className="text-primary text-2xl">✓</span>
+                <p className="text-foreground font-semibold mt-2">
+                  Check your inbox — intel incoming.
+                </p>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleLeadSubmit}>
+                <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                  <Input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={leadEmail}
+                    onChange={(e) => {
+                      setLeadEmail(e.target.value);
+                      if (leadStatus === "error") setLeadStatus("idle");
+                    }}
+                    className="bg-[#0a0a0a] border-border"
+                    disabled={leadStatus === "loading"}
+                  />
+                  <Button
+                    type="submit"
+                    className="font-mono tracking-wider whitespace-nowrap"
+                    disabled={leadStatus === "loading"}
+                  >
+                    {leadStatus === "loading"
+                      ? "Sending..."
+                      : "Send Me the Cheat Sheet"}
+                  </Button>
+                </div>
+                {leadStatus === "error" && (
+                  <p className="text-xs text-destructive mt-3">{leadError}</p>
+                )}
+              </form>
+            )}
+
+            <p className="text-xs text-muted-foreground mt-6 font-mono">
+              Join 2,847+ travelers who showed up prepared. Unsubscribe anytime.
+            </p>
+          </div>
+        </motion.div>
+      </section>
+
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
+
+      {/* CITY CARDS */}
+      <section id="cities" className="py-20 sm:py-28 scroll-mt-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <motion.div
+            variants={sectionVariants}
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView="visible"
+            viewport={viewportOnce}
+            style={{ willChange: "transform" }}
+          >
+            <p className="font-mono text-xs text-primary tracking-[0.3em] uppercase mb-3 text-center">
+              Choose Your Briefing
+            </p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-12">
+              City Survival Vaults
+            </h2>
+          </motion.div>
+          <motion.div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            variants={staggerContainer(0.08)}
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView="visible"
+            viewport={viewportOnce}
+          >
+            {cities.map((city) => (
+              <motion.div
+                key={city.code}
+                variants={fadeUpItem(0.5)}
+                className={`rounded-lg overflow-hidden border-2 transition-all ${
+                  city.available
+                    ? `${accentBorderClass[city.accent]} hover:scale-[1.02]`
+                    : "border-border opacity-40 cursor-not-allowed"
+                }`}
+                whileHover={
+                  city.available && !prefersReducedMotion
+                    ? {
+                        scale: 1.03,
+                        boxShadow: cityHoverShadow[city.accent],
+                      }
+                    : undefined
+                }
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                style={{ willChange: "transform" }}
+              >
+                {city.available && city.banner ? (
+                  <div className="relative h-36 sm:h-40 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={city.banner}
+                      alt={`${city.name} survival guide`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
+                    <div className="absolute bottom-3 left-4">
+                      <span className="font-mono text-xs text-primary tracking-wider">
+                        {city.code}
+                      </span>
+                    </div>
                   </div>
                 ) : (
-                  <div className="mt-4">
-                    <span className="text-xs text-text-muted font-mono">
-                      // PENDING DEPLOYMENT
+                  <div className="h-36 sm:h-40 bg-secondary flex items-center justify-center">
+                    <span className="font-mono text-xs text-muted-foreground tracking-wider">
+                      {city.code}
                     </span>
                   </div>
                 )}
-              </a>
+                <div className="p-5 bg-card">
+                  <h3
+                    className={`text-xl font-bold mb-1 ${
+                      city.available
+                        ? accentTextClass[city.accent]
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {city.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4 italic">
+                    {city.tagline}
+                  </p>
+                  {city.available ? (
+                    <a
+                      href={city.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button
+                        className="w-full font-mono tracking-wider text-sm"
+                        size="sm"
+                      >
+                        GET INTEL — {city.price}
+                      </Button>
+                    </a>
+                  ) : (
+                    <>
+                      <Button
+                        className="w-full font-mono tracking-wider text-sm"
+                        size="sm"
+                        disabled
+                        variant="secondary"
+                      >
+                        COMING SOON
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-2 font-mono">
+                        Want this city?{" "}
+                        <a
+                          href="#free-intel"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            document
+                              .getElementById("free-intel")
+                              ?.scrollIntoView({ behavior: "smooth" });
+                          }}
+                          className="text-primary cursor-pointer hover:underline"
+                        >
+                          Let us know →
+                        </a>
+                      </p>
+                    </>
+                  )}
+                </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
+
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
 
       {/* BUNDLE */}
-      <section id="bundle" className="py-24 px-6 bg-bg-card border-y border-border">
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="font-mono text-xs tracking-[0.3em] text-gold-dim uppercase mb-4">
-            Best Value // Explorer Bundle
+      <section className="py-20 sm:py-28 bg-card">
+        <motion.div
+          className="max-w-2xl mx-auto px-4 sm:px-6 text-center"
+          variants={sectionVariants}
+          initial={prefersReducedMotion ? false : "hidden"}
+          whileInView="visible"
+          viewport={viewportOnce}
+          style={{ willChange: "transform" }}
+        >
+          <p className="font-mono text-xs text-primary tracking-[0.3em] uppercase mb-3">
+            Explorer Bundle
           </p>
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            3 cities. One download.{" "}
-            <span className="text-gold">Save 27%.</span>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-4">
+            3 cities. One download. Save 27%.
           </h2>
-          <p className="text-text-secondary mb-8 max-w-md mx-auto">
-            Bogotá + Medellín + Cartagena — the complete survival intel for
-            Colombia&apos;s top 3 destinations.
-          </p>
-          <div className="inline-flex flex-col items-center p-8 rounded border border-gold/30 bg-bg-dark">
-            <p className="text-text-muted line-through text-lg mb-1">$51</p>
-            <p className="text-4xl font-bold text-gold mb-2">$37</p>
-            <p className="text-xs text-text-secondary mb-6">
-              3 complete city files — instant download
-            </p>
-            <a
-              href="https://megustacomco.gumroad.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center h-12 px-10 bg-gold text-black font-semibold rounded hover:bg-gold-light transition-colors"
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <span className="text-2xl text-muted-foreground line-through">
+              $51
+            </span>
+            <motion.span
+              className="text-5xl sm:text-6xl font-extrabold text-primary"
+              variants={scaleReveal}
+              initial={prefersReducedMotion ? false : "hidden"}
+              whileInView="visible"
+              viewport={viewportOnce}
+              style={{ willChange: "transform" }}
             >
-              Get the Explorer Bundle
-            </a>
+              $37
+            </motion.span>
           </div>
-        </div>
+          <p className="text-muted-foreground text-sm mb-8">
+            Bogotá + Medellín + Cartagena — everything you need before you land.
+          </p>
+          <a
+            href="https://megustacomco.gumroad.com/l/explorer-bundle"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonVariants({ size: "lg", className: "font-mono tracking-wider text-sm px-10" })}
+          >
+            GET THE EXPLORER BUNDLE
+          </a>
+        </motion.div>
       </section>
+
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
 
       {/* FAQ */}
-      <section className="py-24 px-6">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold mb-10">Common questions</h2>
-          <div className="space-y-6">
-            {[
-              {
-                q: "Is this a regular travel guide?",
-                a: "No. Regular guides tell you what to see. This tells you how to survive — scam-free, stress-free, like a local briefed you before landing.",
-              },
-              {
-                q: "I already checked Reddit. Why pay?",
-                a: "Reddit has fragments scattered across 200 threads from 2019. This is curated, current, and structured for your first 72 hours — not a research project.",
-              },
-              {
-                q: "What format is it?",
-                a: "Downloadable PDF. Read it on your phone on the plane. No app, no internet needed.",
-              },
-              {
-                q: "Can I get a refund?",
-                a: "It's a digital product — all sales are final. But at $17, you're risking less than a bad taxi ride.",
-              },
-              {
-                q: "Who made this?",
-                a: "Locals who've watched tourists make the same mistakes for years. We built the guide we wish someone had given us to hand out.",
-              },
-            ].map(({ q, a }) => (
-              <div key={q} className="border-b border-border pb-6">
-                <h3 className="font-semibold mb-2">{q}</h3>
-                <p className="text-sm text-text-secondary leading-relaxed">
-                  {a}
-                </p>
-              </div>
+      <section className="py-20 sm:py-28">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <motion.div
+            variants={sectionVariants}
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView="visible"
+            viewport={viewportOnce}
+            style={{ willChange: "transform" }}
+          >
+            <p className="font-mono text-xs text-primary tracking-[0.3em] uppercase mb-3 text-center">
+              Intel Briefing
+            </p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-12">
+              Frequently Asked Questions
+            </h2>
+          </motion.div>
+          <Accordion multiple={false} className="space-y-2">
+            {faqs.map((faq, i) => (
+              <AccordionItem
+                key={i}
+                value={`faq-${i}`}
+                className="border border-border rounded-lg px-5 bg-card"
+              >
+                <AccordionTrigger className="font-mono text-sm text-foreground hover:no-underline">
+                  {faq.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground text-sm leading-relaxed">
+                  {faq.a}
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
+          </Accordion>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="py-12 px-6 border-t border-border">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <p className="font-mono text-sm tracking-widest text-gold uppercase">
-              Me Gusta Colombia
-            </p>
-            <p className="text-xs text-text-muted mt-1">
-              hola@megusta.com.co
-            </p>
-          </div>
-          <div className="flex gap-6 text-xs text-text-muted">
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
+
+      {/* FINAL CTA */}
+      <section className="py-20 sm:py-28 bg-gradient-to-b from-card to-background">
+        <motion.div
+          className="max-w-3xl mx-auto px-4 sm:px-6 text-center"
+          variants={sectionVariants}
+          initial={prefersReducedMotion ? false : "hidden"}
+          whileInView="visible"
+          viewport={viewportOnce}
+          style={{ willChange: "transform" }}
+        >
+          <p className="font-mono text-xs text-primary tracking-[0.3em] uppercase mb-3">
+            Final Briefing
+          </p>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-4">
+            Still scrolling? Your trip is closer than you think.
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-2xl mx-auto mb-8">
+            Every traveler who bought this guide said the same thing: &ldquo;I
+            wish I had this on my last trip.&rdquo; Don&apos;t be the one who
+            says it after.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-4">
+            <Button
+              size="lg"
+              className="font-mono tracking-wider text-sm"
+              onClick={scrollToCity}
+            >
+              GET YOUR CITY FILE — $17
+            </Button>
             <a
-              href="https://www.pinterest.com/megustacolombia"
+              href="https://megustacomco.gumroad.com/l/explorer-bundle"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-gold transition-colors"
+              className={buttonVariants({ variant: "outline", size: "lg", className: "font-mono tracking-wider text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground" })}
             >
-              Pinterest
-            </a>
-            <a
-              href="#"
-              className="hover:text-gold transition-colors"
-            >
-              Facebook
-            </a>
-            <a
-              href="#"
-              className="hover:text-gold transition-colors"
-            >
-              Instagram
+              EXPLORER BUNDLE — $37
             </a>
           </div>
+          <p className="text-muted-foreground text-xs font-mono">
+            Join <CountUp end={2847} suffix="+" /> travelers who landed
+            prepared, not panicked.
+          </p>
+        </motion.div>
+      </section>
+
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
+
+      {/* FOOTER */}
+      <motion.footer
+        className="border-t border-border py-12"
+        variants={sectionVariants}
+        initial={prefersReducedMotion ? false : "hidden"}
+        whileInView="visible"
+        viewport={viewportOnce}
+      >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <span className="font-mono font-bold text-primary tracking-[0.25em] text-xs">
+                ME GUSTA COLOMBIA
+              </span>
+              <p className="text-muted-foreground text-xs mt-1">
+                <a
+                  href="mailto:hola@megusta.com.co"
+                  className="hover:text-primary transition-colors"
+                >
+                  hola@megusta.com.co
+                </a>
+              </p>
+            </div>
+            <div className="flex gap-6">
+              {[
+                {
+                  name: "Pinterest",
+                  url: "https://www.pinterest.com/megustacolombia",
+                },
+                { name: "Facebook", url: "https://facebook.com" },
+                { name: "Instagram", url: "https://instagram.com" },
+              ].map((s) => (
+                <a
+                  key={s.name}
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-xs text-muted-foreground hover:text-primary transition-colors tracking-wider"
+                >
+                  {s.name.toUpperCase()}
+                </a>
+              ))}
+            </div>
+          </div>
+          <p className="text-center text-muted-foreground text-xs mt-8">
+            © {new Date().getFullYear()} Me Gusta Colombia. All rights reserved.
+          </p>
         </div>
-        <p className="text-center text-xs text-text-muted mt-8">
-          &copy; {new Date().getFullYear()} Me Gusta Colombia. All rights
-          reserved.
-        </p>
-      </footer>
+      </motion.footer>
+
+      {/* BACK TO TOP */}
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="fixed bottom-6 right-6 z-50 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
+            aria-label="Back to top"
+          >
+            <ChevronUp className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
