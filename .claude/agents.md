@@ -14,6 +14,7 @@
    - **Siempre:** `context/dont-do.md`
    - **Si tocas copy, email o UI:** también `context/voice.md` y `context/domain-patterns.md`
    - **Si eres implementer:** también `context/corrections.md`
+5. **Si la feature toca UI o imagen generada:** también `DESIGN.md` (raíz del proyecto)
 
 ---
 
@@ -21,6 +22,7 @@
 
 ```
 megusta-colombia/
+├── DESIGN.md             # Sistema de diseño — leer antes de cualquier UI
 ├── src/app/              # Next.js 15 app router. Página principal: page.tsx
 ├── public/               # Assets estáticos de Next.js
 ├── PDFs/                 # Guías de ciudades — NO editar directamente

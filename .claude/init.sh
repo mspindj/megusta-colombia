@@ -41,6 +41,7 @@ fi
 # 4. Archivos clave del proyecto
 REQUIRED_FILES=(
   "CLAUDE.md"
+  "DESIGN.md"
   ".claude/agents.md"
   ".claude/feature_list.json"
   "src/app/page.tsx"

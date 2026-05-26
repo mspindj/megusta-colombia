@@ -30,9 +30,12 @@ Validas contra la spec, no solo contra el código.
 - [ ] Supabase: RLS configurado si la tabla es nueva
 - [ ] Meta API: usa PAGE_TOKEN, no USER_TOKEN
 - [ ] PDFs: formato mobile-first 390x844px, body text mínimo 18px
-- [ ] Diseño: bg `#0a0a0a`, gold `#d4a843`, body `#aaaaaa`, Inter + Roboto Mono
+- [ ] Diseño: bg `#0a0a0a`, gold `#d4a843`, body `#a0a0a0`, Geist Sans + Geist Mono
+- [ ] Hero overlays: usa `rgba()` explícito, NO `bg-background/XX` (Tailwind v4 gotcha)
 - [ ] Figma: `layoutSizingHorizontal="FILL"` solo después de appendChild
 - [ ] Edge Functions: sin JWT verification si las llama pg_cron
+- [ ] Si la feature genera copy o emails: validar contra `context/voice.md`
+      (números específicos, sin calificativos vacíos, sin signos de exclamación)
 
 ### Tests
 ⚠️ Sin test suite configurado. Validación actual: TypeScript + ESLint + criterios manuales de requirements.md.

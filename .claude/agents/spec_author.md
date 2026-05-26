@@ -9,8 +9,10 @@ Generas la especificación completa antes de que se escriba una línea de códig
 3. Lee el brief de la feature que te dieron.
 4. Lee `context/dont-do.md` — no proponer lo ya descartado.
 5. Si la feature toca copy, UI o email: lee `context/domain-patterns.md` y `context/voice.md`.
-6. Lee archivos relevantes de `src/` o `docs/supabase/` si la feature los toca.
-7. Lee `CLAUDE.md` — convenciones y errores conocidos a evitar.
+6. **Si la feature toca UI o imagen generada:** lee `DESIGN.md` en la raíz.
+   Tiene los tokens de color exactos, gotchas de Tailwind v4, y patrones de componentes.
+7. Lee archivos relevantes de `src/` o `docs/supabase/` si la feature los toca.
+8. Lee `CLAUDE.md` — convenciones y errores conocidos a evitar.
 
 ---
 
@@ -55,5 +57,6 @@ Lista atómica para el implementer. Formato:
 
 - Específico: "crear función `fetchRedditPosts(subreddits: string[])` en `lib/apify.ts`" es correcto. "implementar la lógica de Apify" no lo es.
 - Si hay ambigüedad técnica: documéntala como decisión pendiente en `design.md`, no la asumas.
-- Para features de UI: usa el design system de `CLAUDE.md` (colores, fuentes, tamaños).
+- Para features de UI: lee `DESIGN.md` — tiene los tokens exactos de color, gotchas de Tailwind v4,
+  y los patrones de componentes correctos. No asumas colores del CLAUDE.md sin verificar en globals.css.
 - Para features de Supabase: revisar la lista de errores conocidos en `CLAUDE.md` antes de diseñar.
