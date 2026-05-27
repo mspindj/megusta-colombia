@@ -85,7 +85,7 @@
 
 1. **Figma layoutSizingHorizontal="FILL"**: solo se puede setear DESPUÉS de appendChild a un auto-layout frame
 2. **Figma Folder names**: no pueden tener espacios ("Me Gusta Colombia" → "MeGustaColombia")
-3. **Reddit API**: denegaron acceso. No insistir. Descartado.
+3. **Reddit API**: denegaron acceso. No insistir. Descartado. Reddit también bloquea con 403 desde IPs de cloud (Fly.io, Supabase).
 4. **Pinterest API**: Trial mode = pins no públicos. Standard access requiere video demo de OAuth.
 5. **Meta Graph API**: el token del Graph API Explorer es USER token. Para publicar necesitas PAGE token (obtenido via /me/accounts)
 6. **Gemini TTS**: output es PCM L16 a 24kHz mono. Convertir a WAV antes de usar.
@@ -93,6 +93,11 @@
 8. **Hero overlay en Tailwind v4**: `bg-background/85` resuelve muy oscuro. Usar `style={{ background: "rgba(10,10,10,0.65)" }}` directamente.
 9. **Supabase secrets**: NO guardar tokens en archivos que se commitean. `.mcp.json` en .gitignore.
 10. **colombia-intel-hub**: repo borrado. No intentar acceder. Todo está en megusta-colombia.
+11. **Next.js Edge Runtime + @supabase/ssr**: CRASH. El middleware NO puede usar `createServerClient` de `@supabase/ssr` — Edge Runtime no soporta las APIs que usa. Usar solo `request.cookies` para verificar presencia de sesión.
+12. **NEXT_PUBLIC_ vars en Vercel**: se embeben en el BUILD, no en runtime. Si se agregan después del auto-deploy, el sitio las ve como `undefined`. Solución: agregar vars → `npx vercel deploy --prod --force`.
+12b. **DOS proyectos Vercel** (¡crítico!): existen `megusta-colombia` Y `megusta-com-co`. El que sirve megusta.com.co es `megusta-com-co`. Verificar SIEMPRE con `npx vercel inspect megusta.com.co` antes de tocar env vars. Para linkear al correcto: `npx vercel link --project megusta-com-co --yes`.
+13. **Apify Reddit scraper** (`trudax~reddit-scraper`): trial expirado. No usar. intel-gather migrado a HN Algolia API.
+14. **content_ideas source constraint**: la constraint `content_ideas_source_check` inicialmente solo permitía 'reddit', 'instagram', 'manual'. Alterada para incluir 'hackernews'.
 
 ## Decisiones de Arquitectura
 
@@ -104,15 +109,19 @@
 6. **Gemini TTS en vez de fal.ai/ElevenLabs**: gratis con la Google API key del usuario, calidad comparable.
 7. **4 posts/semana en vez de diario**: calidad > volumen. Los Reels tienen alcance orgánico de 7-14 días.
 8. **Taxi calculator sin Maps API**: precios hardcodeados por ruta — más rápido, sin costo, suficiente para el MVP.
+9. **intel-gather: HN Algolia API en vez de Reddit/Apify**: Reddit bloqueado, Apify trial expirado. HN Algolia (`hn.algolia.com/api/v1/search`) es gratis, sin auth, funciona desde cloud IPs. Queries: "colombia", "medellin", "bogota", "cartagena colombia", "digital nomad colombia".
+10. **Dashboard auth: email/password en vez de magic link**: Supabase Free SMTP tiene rate limiting y los mails caen en spam. Email fijo `hola@megusta.com.co` hardcodeado en el form, solo se pide contraseña.
+11. **Middleware simplificado**: solo verifica cookie `sb-*-auth-token`. La validación real de sesión ocurre en el Server Component (`supabase.auth.getUser()`).
+12. **Vercel env vars para todas las environments**: agregar NEXT_PUBLIC_ vars solo a Production no es suficiente — también agregarlas a Preview (`npx vercel env add VAR preview "" --value "..." --yes`).
 
-## Estado Actual (22 May 2026)
+## Estado Actual (26 May 2026)
 
 ### Completado
 - Landing page live en megusta.com.co (Next.js, Vercel, GitHub)
 - Lead magnet funnel: form → Supabase subscribe → Brevo → 4 email sequence
 - Arrival Cheat Sheet PDF (Figma, mobile-first, WCAG AA/AAA) en Gumroad $0
 - 3 guías de ciudades rediseñadas en Figma (BOG 38pp, MDE 26pp, CTG 26pp)
-- intel-gather Edge Function: pg_cron lunes 8am → Apify Reddit → content_ideas
+- intel-gather Edge Function v8: pg_cron lunes 8am → HN Algolia API → content_ideas (migrado desde Apify Reddit — trial expirado)
 - idea-to-queue Edge Function: trigger on_idea_approved → Haiku → imagen Satori → content_queue
 - taxi-subscribe Edge Function: captura email con source=taxi-calculator + ciudad
 - /taxi page: calculadora de taxis con 8 rutas, 3 ciudades, modal de captura
@@ -120,13 +129,20 @@
 - Meta Ad Account act_12667938 activo, secrets en Supabase
 - Migración completa Lovable → Next.js (colombia-intel-hub borrado)
 - SDD harness completo en .claude/ (agents, context, specs, feature_list)
+- DESIGN.md creado en raíz — design system reference completo para agents
+- Dashboard `/dashboard` live: login con contraseña → tabla content_ideas → Aprobar/Borrar ideas
+  - Login: `hola@megusta.com.co` + password (email fijo, solo pedir contraseña)
+  - Auth: Supabase email/password, cookie `sb-*-auth-token`, server-side getUser()
+  - Server Actions: approveIdea, deleteIdea, signOut
+  - Middleware simplificado (Edge Runtime, solo cookie presence check)
+  - Env vars: NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY en Vercel (Production + Preview)
+- Notificaciones intel-gather → `hola@megusta.com.co`
 
 ### Pendiente
-- DNS propagado → smoke test completo de /taxi (email → Brevo → confirmación)
+- **PRÓXIMO**: entrar a megusta.com.co/dashboard/login y aprobar ideas → probar pipeline completo (aprobar → Haiku → copy + imagen → content_queue)
 - Privacy policy page en megusta.com.co
 - Pinterest Standard Access (requiere video demo)
 - Producir guía de Cali (4ta ciudad)
-- content_queue: agregar nuevos posts (pipeline intel-gather → idea aprobada → auto-queue)
 - colombia-reel-template (Remotion parametrizado)
 - remotion-render-server (bloqueado por reel-template)
 

@@ -14,7 +14,7 @@ export default async function DashboardPage() {
 
   const { data: ideas } = await supabase
     .from("content_ideas")
-    .select("id, title, origin, score, url, status")
+    .select("id, title, origin, score, url, status, content_type, notes")
     .order("status", { ascending: true }) // pending primero
     .order("score", { ascending: false });
 
@@ -84,6 +84,9 @@ export default async function DashboardPage() {
                 <tr className="border-b border-[#2a2a2a]">
                   <th className="text-left py-3 px-4 text-[#666666] text-xs font-mono uppercase tracking-wider">
                     Idea
+                  </th>
+                  <th className="text-center py-3 px-4 text-[#666666] text-xs font-mono uppercase tracking-wider">
+                    Tipo
                   </th>
                   <th className="text-center py-3 px-4 text-[#666666] text-xs font-mono uppercase tracking-wider">
                     Score

@@ -13,15 +13,42 @@ const SUPABASE_DASHBOARD =
   "https://supabase.com/dashboard/project/uocwxwvcrnkfnnoyjzyb/editor";
 const NOTIFICATION_EMAIL = "hola@megusta.com.co";
 
-// Términos de búsqueda en Hacker News via Algolia.
-// Nota: "colombia" también matchea "British Columbia" — curar manualmente en dashboard.
+// Términos de búsqueda en Hacker News via Algolia — TRAVEL-FOCUSED.
+// Las queries genéricas ("colombia", "bogota") traían demasiado amarillismo
+// (cartel, fraude, política). Estas queries son más específicas para viajes/turismo/nómadas.
 // Reddit bloqueado desde IPs de Fly.io (403). Apify trial expirado 2026-05-26.
 const HN_QUERIES = [
-  "colombia",
-  "medellin",
-  "bogota",
-  "cartagena colombia",
-  "digital nomad colombia",
+  "colombia digital nomad",
+  "medellin coworking",
+  "bogota remote work",
+  "colombia travel",
+  "cartagena tourism",
+  "colombia expat",
+  "colombia visa nomad",
+  "medellin tourism",
+];
+
+// Filtro de exclusión — descarta títulos con noticias amarillistas / no-travel.
+// Caso-insensitive, match parcial. Si el título contiene CUALQUIERA de estas, se descarta.
+const BLOCKED_KEYWORDS = [
+  "cartel",
+  "drug trafficking",
+  "narco",
+  "kidnap",
+  "killed",
+  "murder",
+  "shooting",
+  "terror",
+  "war on",
+  "militar",
+  "tax fraud",
+  "money laundering",
+  "british columbia", // falso positivo común
+  "shakira", // celeb gossip
+  "petro", // política
+  "guerrilla",
+  "farc",
+  "eln",
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -131,10 +158,17 @@ async function insertIdeas(
   existingUrls: Set<string>,
   serviceKey: string
 ): Promise<InsertResult> {
+  // Filtro amarillismo: descarta títulos con keywords bloqueadas
+  const isBlocked = (title: string): boolean => {
+    const lower = title.toLowerCase();
+    return BLOCKED_KEYWORDS.some((kw) => lower.includes(kw));
+  };
+
   // Score mínimo 5 (HN tiene scores más bajos que Reddit)
   const filtered = posts
     .filter((p) => p.score >= 5)
-    .filter((p) => !existingUrls.has(p.url));
+    .filter((p) => !existingUrls.has(p.url))
+    .filter((p) => !isBlocked(p.title));
 
   if (filtered.length === 0) {
     return { inserted: 0, titles: [] };
