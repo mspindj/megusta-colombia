@@ -12,17 +12,33 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email: "hola@megusta.com.co",
-      password,
-    });
+    try {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (!url || !key) {
+        setError(`ENV faltantes: URL=${!!url} KEY=${!!key}`);
+        setLoading(false);
+        return;
+      }
 
-    if (error) {
-      setError("Contraseña incorrecta.");
+      const supabase = createClient();
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email: "hola@megusta.com.co",
+        password,
+      });
+
+      if (error) {
+        setError(`Error: ${error.message}`);
+        setLoading(false);
+      } else if (data?.session) {
+        window.location.href = "/dashboard";
+      } else {
+        setError("Sin sesión devuelta. Intentá de nuevo.");
+        setLoading(false);
+      }
+    } catch (err) {
+      setError(`Exception: ${String(err)}`);
       setLoading(false);
-    } else {
-      window.location.href = "/dashboard";
     }
   }
 
