@@ -98,6 +98,13 @@
 12b. **DOS proyectos Vercel** (¡crítico!): existen `megusta-colombia` Y `megusta-com-co`. El que sirve megusta.com.co es `megusta-com-co`. Verificar SIEMPRE con `npx vercel inspect megusta.com.co` antes de tocar env vars. Para linkear al correcto: `npx vercel link --project megusta-com-co --yes`.
 13. **Apify Reddit scraper** (`trudax~reddit-scraper`): trial expirado. No usar. intel-gather migrado a HN Algolia API.
 14. **content_ideas source constraint**: la constraint `content_ideas_source_check` inicialmente solo permitía 'reddit', 'instagram', 'manual'. Alterada para incluir 'hackernews'.
+15. **content_ideas.content_type constraint**: por defecto solo permitía 'image'/'reel'. Alterada para incluir 'carousel' (2026-05-27).
+16. **Supabase Management API PATCH /functions/{slug} está ROTO** (2026-05-27): el endpoint responde "version N ACTIVE" pero el código no se actualiza → BOOT_ERROR persistente. SIEMPRE usar el MCP `deploy_edge_function` o el SDK CLI, NUNCA el endpoint PATCH directo.
+17. **Satori NO soporta WOFF2** — solo TTF/OTF. Fuentes válidas: `https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoSans/NotoSans-Bold.ttf` (y Black). Las URLs de fontsource con `.woff2` rompen con "Unsupported OpenType signature wOF2".
+18. **Supabase migró sus API keys** (2026-05-27): el `SUPABASE_SERVICE_ROLE_KEY` inyectado en Edge Functions es ahora el formato nuevo `sb_secret_*` (41 chars, NO es JWT). Storage API rechaza ese formato con "Invalid Compact JWS" — REQUIERE el JWT legacy (`eyJhbG...`). Solución: setear un secret separado con nombre `SERVICE_ROLE_JWT` (sin prefijo `SUPABASE_` porque la Management API rechaza esos nombres). REST API sí acepta ambos formatos.
+19. **META_PAGE_TOKEN expira** (2026-05-27): el token actual expiró 2026-05-22. Renovar via Graph API Explorer: generar USER token long-lived → llamar `/me/accounts` → obtener PAGE token long-lived → setear como secret META_PAGE_TOKEN.
+20. **approveIdea NO disparaba pipeline** (descubierto y arreglado 2026-05-27): el Server Action solo hacía UPDATE. Ahora invoca `idea-to-queue` con `AbortSignal.timeout(500)` fire-and-forget. NO confiar en triggers Postgres invisibles — código explícito > magia.
+21. **auto-publish Edge Function NO está conectado a la tabla content_queue**: tiene un array CONTENT_QUEUE hardcoded en el código. Para publicar la tabla real, usar `meta-publish` directamente. Reescribir auto-publish es deuda pendiente.
 
 ## Decisiones de Arquitectura
 
@@ -113,8 +120,10 @@
 10. **Dashboard auth: email/password en vez de magic link**: Supabase Free SMTP tiene rate limiting y los mails caen en spam. Email fijo `hola@megusta.com.co` hardcodeado en el form, solo se pide contraseña.
 11. **Middleware simplificado**: solo verifica cookie `sb-*-auth-token`. La validación real de sesión ocurre en el Server Component (`supabase.auth.getUser()`).
 12. **Vercel env vars para todas las environments**: agregar NEXT_PUBLIC_ vars solo a Production no es suficiente — también agregarlas a Preview (`npx vercel env add VAR preview "" --value "..." --yes`).
+13. **Pipeline trigger en código, no en Postgres**: descubierto 27 May que el "trigger on_idea_approved" nunca existió. Decisión: el Server Action `approveIdea` dispara la function explícitamente con fetch + `AbortSignal.timeout(500)`. Razones: (a) debuggeable, (b) no requiere pg_net, (c) la function ya es idempotente.
+14. **Schedule de publicación**: 4 posts/semana en días lun(1)/mié(3)/vie(5)/dom(0) UTC. Coherente con el PUBLISH_DAYS de idea-to-queue. Si se atrasa el queue, redistribuir las publish_date — NO bombardear Meta con backlog.
 
-## Estado Actual (26 May 2026)
+## Estado Actual (27 May 2026)
 
 ### Completado
 - Landing page live en megusta.com.co (Next.js, Vercel, GitHub)
@@ -137,14 +146,23 @@
   - Middleware simplificado (Edge Runtime, solo cookie presence check)
   - Env vars: NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY en Vercel (Production + Preview)
 - Notificaciones intel-gather → `hola@megusta.com.co`
+- **Dashboard mejorado (27 May)**: columna "Tipo" con badge image/carousel/reel + expandable con `notes` (pillar/CTA/psicología) para dar contexto a Haiku al generar copy.
+- **intel-gather v9 (27 May)**: queries TRAVEL-FOCUSED (`colombia digital nomad`, `medellin coworking`, etc.) + filtro de 18 keywords amarillistas (cartel, narco, kidnap, shakira, petro, farc, etc.).
+- **idea-to-queue v11 ANDA (27 May)**: re-deployada vía MCP. Fonts cambiados a Noto Sans TTF. Secret `SERVICE_ROLE_JWT` para Storage. Prompt enriquecido con `notes` + `content_type`. Parsing tolerante (regex `\{[\s\S]*\}`).
+- **approveIdea pipeline (27 May)**: ahora dispara `idea-to-queue` con `AbortSignal.timeout(500)` fire-and-forget. Antes solo hacía UPDATE.
+- **22 ideas curadas en content_ideas** desde `docs/content-plan-30-days.md` (Bogotá 4, Medellín 4, Cartagena 3, General 11). Notes con pillar+CTA+psicología.
+- **21 posts generados en content_queue** (27 May, batch process): Haiku copy + Satori image. Calidad excelente. Hooks tipo "Tu cara te vende en Bogotá", "Taxi 80k vs 25k: cuánto te están robando".
+- **Queue redistribuido**: 21 posts schedule lun/mié/vie/dom desde 2026-05-27 hasta 2026-07-01.
 
 ### Pendiente
-- **PRÓXIMO**: entrar a megusta.com.co/dashboard/login y aprobar ideas → probar pipeline completo (aprobar → Haiku → copy + imagen → content_queue)
+- **🚨 BLOQUEANTE**: renovar `META_PAGE_TOKEN` (expiró 22 May 2026). Sin esto NO se publica nada a IG/FB. Renovar via Graph API Explorer.
+- Reescribir `auto-publish` Edge Function para que lea de la tabla `content_queue` (hoy lee de array hardcoded). O configurar pg_cron que llame `meta-publish` directamente para los posts del día.
 - Privacy policy page en megusta.com.co
 - Pinterest Standard Access (requiere video demo)
 - Producir guía de Cali (4ta ciudad)
 - colombia-reel-template (Remotion parametrizado)
 - remotion-render-server (bloqueado por reel-template)
+- Fix menor: el `nextPublishDate` de idea-to-queue toma "último publish_date + 1" — si la tabla tiene fechas viejas, devuelve fechas viejas. Cambiar para que use `MAX(publish_date, today)`.
 
 ## Comandos Frecuentes
 
