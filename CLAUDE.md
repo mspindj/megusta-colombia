@@ -2,6 +2,20 @@
 
 # Me Gusta Colombia — Project CLAUDE.md
 
+## Cómo hablarle a Miguel
+
+**Tuteo colombiano. Nada de voseo argentino, nada de paisa cerrado.**
+
+- ✅ "te lo dejo listo", "puedes verificar", "necesitas renovar el token", "mira esto", "lo pusheé al main"
+- ❌ "querés", "andá", "vos tenés", "pifié", "joya", "che", "dale"
+- ❌ "parcero", "qué hubo pues", "berraco", "muy bacano" (paisa, no neutro)
+
+El usuario es de Bogotá / Colombia urbano. Tutea pero sin marcadores regionales fuertes.
+Tono profesional pero directo, sin formalidad excesiva ("usted"). Vocabulario neutro
+colombiano funciona: "listo", "chévere" (con moderación), "te queda funcionando", "lo dejé".
+
+**Anglicismos técnicos OK** ("deploy", "trigger", "queue", "scope", "merge") — son del oficio.
+
 ## Stack Técnico
 
 | Capa | Herramienta | Notas |
@@ -153,16 +167,33 @@
 - **22 ideas curadas en content_ideas** desde `docs/content-plan-30-days.md` (Bogotá 4, Medellín 4, Cartagena 3, General 11). Notes con pillar+CTA+psicología.
 - **21 posts generados en content_queue** (27 May, batch process): Haiku copy + Satori image. Calidad excelente. Hooks tipo "Tu cara te vende en Bogotá", "Taxi 80k vs 25k: cuánto te están robando".
 - **Queue redistribuido**: 21 posts schedule lun/mié/vie/dom desde 2026-05-27 hasta 2026-07-01.
+- **META_PAGE_TOKEN renovado (27 May)** — el viejo había expirado el 22 May. Token nuevo funciona para IG (FB requiere scope adicional `pages_manage_posts`, deuda menor).
+- **Primer post LIVE en IG (27 May)** — `idea-54c471be-a4a` "Intel de emergencia" publicado a las 12:02pm COL. ID: `18129189619592586`. Quedó en español (error mío del prompt — corregido).
+- **20 posts REGENERADOS en inglés (27 May)** — descubrimos que el target son extranjeros (Gumroad USD, lead magnet EN, hashtags EN). Cambié el prompt a EN con frases español como insider vocabulary ("no dar papaya", "parce"). Hooks ejemplo: *"Your face either protects you or exposes you."* / *"Gringos pay $15 for a $3 taxi ride"* / *"Reddit's five years old. Our intel is current."*
+- **auto-publish reescrita v9 (27 May)** — antes leía de array hardcoded en código. Ahora lee de tabla `content_queue` (`published=false AND publish_date<=today ORDER BY date ASC LIMIT 1`). Publica via meta-publish, marca `published=true` + `ig_post_id`. Sólo IG por ahora.
+- **Cron auto-publish-rotate VIVO** — schedule `0 14 * * 1,3,5,0` (9am COL lun/mié/vie/dom). Cierra el loop end-to-end: aprobar idea → Haiku copy + Satori imagen → content_queue → auto-publish → IG.
+- **idea-to-queue v13** — prompt en inglés + fix de `nextPublishDate` (MAX(lastDate, today)) + tolerancia a JSON con texto extra de Haiku.
+- **content_ideas constraints arregladas** — content_type acepta 'carousel' (no solo image/reel). status acepta 'in_progress' (antes la function fallaba en silencio actualizando status).
+
+### Pipeline en piloto automático
+Próximos 20 lanzamientos quedaron agendados automáticos:
+- Vie 29 May 9am COL → *"Your face either protects you or exposes you."*
+- Dom 31 May 9am COL → *"The Colombian rule that stops theft before it starts."*
+- Lun 1 Jun 9am COL → *"El Dorado Airport taxi scam—and how to avoid it"*
+- ... 17 más hasta Mié 1 Jul 2026.
+
+Si algo falla, el row de `content_queue` queda con `published=false` + `error` poblado.
 
 ### Pendiente
-- **🚨 BLOQUEANTE**: renovar `META_PAGE_TOKEN` (expiró 22 May 2026). Sin esto NO se publica nada a IG/FB. Renovar via Graph API Explorer.
-- Reescribir `auto-publish` Edge Function para que lea de la tabla `content_queue` (hoy lee de array hardcoded). O configurar pg_cron que llame `meta-publish` directamente para los posts del día.
+- Verificar el viernes 29 May después de las 9am COL que el cron disparó OK (abrir IG + revisar tabla `content_queue`).
+- Renovar `META_PAGE_TOKEN` con scope `pages_manage_posts` cuando se quiera publicar también en FB (no urgente, IG es el canal principal).
+- Reescribir `nextPublishDate` para que respete días libres ya ocupados sin pisarlos (hoy si ya hay un post en día X, el siguiente cae en X+1).
 - Privacy policy page en megusta.com.co
 - Pinterest Standard Access (requiere video demo)
 - Producir guía de Cali (4ta ciudad)
 - colombia-reel-template (Remotion parametrizado)
 - remotion-render-server (bloqueado por reel-template)
-- Fix menor: el `nextPublishDate` de idea-to-queue toma "último publish_date + 1" — si la tabla tiene fechas viejas, devuelve fechas viejas. Cambiar para que use `MAX(publish_date, today)`.
+- Cuando se acabe el queue (después de 1 Jul): aprobar más ideas desde el dashboard (intel-gather ya está corriendo semanal lunes 8am con queries travel-focused).
 
 ## Comandos Frecuentes
 
