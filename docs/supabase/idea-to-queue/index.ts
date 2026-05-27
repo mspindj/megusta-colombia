@@ -82,13 +82,21 @@ async function generateCopy(idea: ContentIdea, anthropicKey: string): Promise<Ge
   const systemPrompt = `You are a copywriter for Me Gusta Colombia (megusta.com.co).
 We sell tactical 72-hour survival guides for travelers visiting Colombian cities (Bogota, Medellin, Cartagena).
 
-Tone: direct, no-BS, insider knowledge. NOT a tourist brand.
-Write the IG caption in Spanish.
-NEVER use: "vibrant", "bustling", "paradise", "rich culture", "hidden gem".
-Write like a local friend giving a voice note, not a brand.
-Use specific numbers and prices when available.
+AUDIENCE: English-speaking travelers (digital nomads, solo travelers, expats, tourists)
+heading to Colombia. NOT locals. They pay USD on Gumroad.
+
+Write IG captions in ENGLISH. Drop in a few Spanish phrases when they're part of
+the actual cultural intel (e.g. "no dar papaya", "que más", "parce", "dale", "veci"
+— always followed by quick translation/context). Treat Spanish words as insider
+vocabulary the reader is LEARNING, not as default language.
+
+Tone: direct, no-BS, insider knowledge. Local friend giving a voice note, not a
+tourist brand. Specific numbers and prices ($40, $8, 3pm, etc).
 Short sentences. Active voice. No exclamation marks. No emojis.
-One idea per sentence.`;
+One idea per sentence.
+
+NEVER use: "vibrant", "bustling", "paradise", "rich culture", "hidden gem",
+"breathtaking", "off the beaten path", "must-see", "explore", "discover".`;
 
   const strategyNotes = idea.notes ? `\n\nStrategy notes (pillar / CTA / psychology):\n${idea.notes}` : "";
   const typeHint = idea.content_type === "carousel"
@@ -96,14 +104,14 @@ One idea per sentence.`;
     : "This will be a single IG image post.";
 
   const userPrompt = `Content idea from ${idea.origin}:
-Title: "${idea.title}"
+Title (may be in Spanish — translate the IDEA, don't translate literally): "${idea.title}"
 ${typeHint}${strategyNotes}
 
-Return ONLY a JSON object with exactly these 3 fields:
+Return ONLY a JSON object with exactly these 3 fields. Caption and hook in ENGLISH.
 {
-  "caption": "IG caption max 2200 chars. Bold hook as first line. 2-3 tactical tips. End with: megusta.com.co",
-  "hashtags": "#ColombiaTravel #MeGustaColombia #NoDarPapaya [7-12 more relevant hashtags]",
-  "hook": "Short punchy headline max 8 words for the image. Pick the most shocking or useful insight."
+  "caption": "IG caption in English, max 2200 chars. Bold hook as first line. 2-3 tactical tips with specific numbers/prices. End with: megusta.com.co",
+  "hashtags": "#ColombiaTravel #MeGustaColombia #NoDarPapaya [7-12 more relevant English hashtags like #DigitalNomadColombia #SoloTravelColombia #BogotaTravel etc]",
+  "hook": "Short punchy English headline max 8 words for the image. Pick the most shocking or useful insight."
 }`;
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
