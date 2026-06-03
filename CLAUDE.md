@@ -116,7 +116,7 @@ colombiano funciona: "listo", "chévere" (con moderación), "te queda funcionand
 16. **Supabase Management API PATCH /functions/{slug} está ROTO** (2026-05-27): el endpoint responde "version N ACTIVE" pero el código no se actualiza → BOOT_ERROR persistente. SIEMPRE usar el MCP `deploy_edge_function` o el SDK CLI, NUNCA el endpoint PATCH directo.
 17. **Satori NO soporta WOFF2** — solo TTF/OTF. Fuentes válidas: `https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoSans/NotoSans-Bold.ttf` (y Black). Las URLs de fontsource con `.woff2` rompen con "Unsupported OpenType signature wOF2".
 18. **Supabase migró sus API keys** (2026-05-27): el `SUPABASE_SERVICE_ROLE_KEY` inyectado en Edge Functions es ahora el formato nuevo `sb_secret_*` (41 chars, NO es JWT). Storage API rechaza ese formato con "Invalid Compact JWS" — REQUIERE el JWT legacy (`eyJhbG...`). Solución: setear un secret separado con nombre `SERVICE_ROLE_JWT` (sin prefijo `SUPABASE_` porque la Management API rechaza esos nombres). REST API sí acepta ambos formatos.
-19. **META_PAGE_TOKEN expira** (2026-05-27): el token actual expiró 2026-05-22. Renovar via Graph API Explorer: generar USER token long-lived → llamar `/me/accounts` → obtener PAGE token long-lived → setear como secret META_PAGE_TOKEN.
+19. **META_PAGE_TOKEN expira frecuentemente** — ocurrió el 2026-05-22 y de nuevo el 2026-05-29. Causa raíz: si se guarda un USER token corto (expira en 1-2h) o un USER token long-lived (~60 días) en vez de un PAGE token, el pipeline se rompe silenciosamente. **Solución permanente**: obtener un PAGE token long-lived (no expira) siguiendo el flujo de 4 pasos: (1) Graph API Explorer → Generate Access Token (User Token corto), (2) exchange por User Token long-lived vía `/oauth/access_token?grant_type=fb_exchange_token&client_id=APP_ID&client_secret=APP_SECRET&fb_exchange_token=USER_TOKEN`, (3) `/me/accounts` → tomar el `access_token` de la página Me Gusta Colombia, (4) ese PAGE token va al secret `META_PAGE_TOKEN` en Supabase. APP_ID y APP_SECRET están en Meta for Developers → app Me Gusta Colombia → Configuración básica.
 20. **approveIdea NO disparaba pipeline** (descubierto y arreglado 2026-05-27): el Server Action solo hacía UPDATE. Ahora invoca `idea-to-queue` con `AbortSignal.timeout(500)` fire-and-forget. NO confiar en triggers Postgres invisibles — código explícito > magia.
 21. **auto-publish Edge Function NO está conectado a la tabla content_queue**: tiene un array CONTENT_QUEUE hardcoded en el código. Para publicar la tabla real, usar `meta-publish` directamente. Reescribir auto-publish es deuda pendiente.
 
@@ -137,7 +137,7 @@ colombiano funciona: "listo", "chévere" (con moderación), "te queda funcionand
 13. **Pipeline trigger en código, no en Postgres**: descubierto 27 May que el "trigger on_idea_approved" nunca existió. Decisión: el Server Action `approveIdea` dispara la function explícitamente con fetch + `AbortSignal.timeout(500)`. Razones: (a) debuggeable, (b) no requiere pg_net, (c) la function ya es idempotente.
 14. **Schedule de publicación**: 4 posts/semana en días lun(1)/mié(3)/vie(5)/dom(0) UTC. Coherente con el PUBLISH_DAYS de idea-to-queue. Si se atrasa el queue, redistribuir las publish_date — NO bombardear Meta con backlog.
 
-## Estado Actual (27 May 2026)
+## Estado Actual (2 Jun 2026)
 
 ### Completado
 - Landing page live en megusta.com.co (Next.js, Vercel, GitHub)
@@ -175,17 +175,21 @@ colombiano funciona: "listo", "chévere" (con moderación), "te queda funcionand
 - **idea-to-queue v13** — prompt en inglés + fix de `nextPublishDate` (MAX(lastDate, today)) + tolerancia a JSON con texto extra de Haiku.
 - **content_ideas constraints arregladas** — content_type acepta 'carousel' (no solo image/reel). status acepta 'in_progress' (antes la function fallaba en silencio actualizando status).
 
+### Jornada 2 Jun 2026 — Recovery del pipeline
+
+- **META_PAGE_TOKEN volvió a expirar** (2026-05-29) — 3 posts no se publicaron (may 29, 31, jun 1).
+- **Token renovado** en Supabase secrets por el usuario. Pipeline reactivado.
+- **Post may 29 publicado manualmente** (idea-dcc1f59c, ig_id: 18132585997602491) — *"Your face is your first security system in Bogotá."*
+- **Queue se auto-repara**: los posts de may 31 y jun 1 tienen publish_date pasado, serán publicados por el cron en sus próximas fires (mié 4 y vie 6 Jun).
+- **Problema raíz identificado**: el token guardado en Supabase era un USER token (corta duración) en vez de un PAGE token permanente. Pendiente reemplazarlo con el flujo de 4 pasos descrito en el error #19.
+
 ### Pipeline en piloto automático
-Próximos 20 lanzamientos quedaron agendados automáticos:
-- Vie 29 May 9am COL → *"Your face either protects you or exposes you."*
-- Dom 31 May 9am COL → *"The Colombian rule that stops theft before it starts."*
-- Lun 1 Jun 9am COL → *"El Dorado Airport taxi scam—and how to avoid it"*
-- ... 17 más hasta Mié 1 Jul 2026.
+Estado al 2 Jun 2026: **11 posts publicados** (9 de abril + 2 de mayo), **19 pendientes** hasta 1 Jul.
 
 Si algo falla, el row de `content_queue` queda con `published=false` + `error` poblado.
 
 ### Pendiente
-- Verificar el viernes 29 May después de las 9am COL que el cron disparó OK (abrir IG + revisar tabla `content_queue`).
+- **⚠️ URGENTE: obtener PAGE token long-lived** (no expira) y reemplazar el actual en Supabase. Ver error #19 para el flujo completo. APP_ID y APP_SECRET en Meta for Developers → Me Gusta Colombia app.
 - Renovar `META_PAGE_TOKEN` con scope `pages_manage_posts` cuando se quiera publicar también en FB (no urgente, IG es el canal principal).
 - Reescribir `nextPublishDate` para que respete días libres ya ocupados sin pisarlos (hoy si ya hay un post en día X, el siguiente cae en X+1).
 - Privacy policy page en megusta.com.co
