@@ -255,6 +255,10 @@ export default function Home() {
       const data = await response.json();
       if (data.success) {
         setLeadStatus("success");
+        // Fire Meta Pixel Lead event on successful subscription
+        if (typeof window !== "undefined" && typeof (window as Window & { fbq?: (...args: unknown[]) => void }).fbq === "function") {
+          (window as Window & { fbq?: (...args: unknown[]) => void }).fbq!("track", "Lead", { content_name: "Colombia Cheat Sheet" });
+        }
       } else {
         setLeadError(
           data.error ||
