@@ -138,7 +138,7 @@ colombiano funciona: "listo", "chévere" (con moderación), "te queda funcionand
 13. **Pipeline trigger en código, no en Postgres**: descubierto 27 May que el "trigger on_idea_approved" nunca existió. Decisión: el Server Action `approveIdea` dispara la function explícitamente con fetch + `AbortSignal.timeout(500)`. Razones: (a) debuggeable, (b) no requiere pg_net, (c) la function ya es idempotente.
 14. **Schedule de publicación**: 4 posts/semana en días lun(1)/mié(3)/vie(5)/dom(0) UTC. Coherente con el PUBLISH_DAYS de idea-to-queue. Si se atrasa el queue, redistribuir las publish_date — NO bombardear Meta con backlog.
 
-## Estado Actual (2 Jun 2026)
+## Estado Actual (3 Jun 2026)
 
 ### Completado
 - Landing page live en megusta.com.co (Next.js, Vercel, GitHub)
@@ -176,6 +176,43 @@ colombiano funciona: "listo", "chévere" (con moderación), "te queda funcionand
 - **idea-to-queue v13** — prompt en inglés + fix de `nextPublishDate` (MAX(lastDate, today)) + tolerancia a JSON con texto extra de Haiku.
 - **content_ideas constraints arregladas** — content_type acepta 'carousel' (no solo image/reel). status acepta 'in_progress' (antes la function fallaba en silencio actualizando status).
 
+### Jornada 3 Jun 2026 — Meta Ads primera campaña + fixes
+
+**Meta Pixel Lead tracking arreglado:**
+- `fbq('track', 'Lead', {content_name: 'Colombia Cheat Sheet'})` agregado al success callback de `handleLeadSubmit` en `page.tsx`. Antes solo disparaba en el taxi calculator.
+
+**META_PAGE_TOKEN — token permanente obtenido:**
+- Flujo de 4 pasos completado (User Token corto → long-lived → /me/accounts → Page Token permanente).
+- Token permanente en Supabase. No expira salvo cambio de contraseña FB o revocación de permisos.
+
+**Meta App publicada en modo Live:**
+- La app estaba en Development mode — impedía crear ads.
+- Creadas páginas legales: `/privacy`, `/terms`, `/data-deletion` (requeridas por Meta para publicar).
+- App publicada en developers.facebook.com.
+
+**Meta Ads MCP configurado:**
+- `.mcp.json` con `meta-ads-mcp` + personal user token de Miguel (long-lived ~60 días).
+- El ad account `act_12667938` vive en la cuenta personal de Miguel, NO en el Business Portfolio "Me Gusta". Por eso el system user token del Business Manager no lo veía.
+- Pendiente: transferir el ad account al Business Portfolio para usar system user token permanente.
+
+**Primera campaña Meta Ads ACTIVA (3 Jun 2026):**
+- Campaign: `MG_Traffic_ColombiaVisitors_CheatSheet_Jun26` (ID: `52507937855697`)
+- Ad Set: `IG_Travelers_EN_Broad_Jun26` (ID: `52507942363297`) — US/CA/GB/AU/DE, edad 23-42, solo Instagram, Advantage+ audience off
+- Presupuesto: **30,000 COP/día (~$7 USD)** = ~$50 USD/semana
+- Objetivo: OUTCOME_TRAFFIC → LINK_CLICKS → megusta.com.co
+- 3 ads con imágenes del content_queue (Supabase Storage):
+  - `MG_Ad1_TaxiHook` (ID: 52508006309097) — "Gringos pay $40. Locals pay $8."
+  - `MG_Ad2_FaceHook` (ID: 52508006337497) — "Your face is your first security system."
+  - `MG_Ad3_NoDarPapaya` (ID: 52508006359697) — "No dar papaya. Don't make yourself a target."
+- Revisar resultados el jueves 6 Jun: CTR objetivo >1.5%, CPC objetivo <1,500 COP
+
+**Errores encontrados y aprendizajes:**
+- `targeting_optimization` fue eliminado por Meta → no incluir en targeting spec
+- Con CBO activo en campaña, el ad set NO puede tener budget propio
+- Meta no acepta `image_url` en `link_data` → hay que subir imagen primero a `/adimages` y usar el hash
+- Imágenes se suben como multipart binary (`-F file=@path`), no como URL
+- COP usa pesos directos en la API (no centavos) — ver error #21
+
 ### Jornada 2 Jun 2026 — Recovery del pipeline
 
 - **META_PAGE_TOKEN volvió a expirar** (2026-05-29) — 3 posts no se publicaron (may 29, 31, jun 1).
@@ -190,10 +227,11 @@ Estado al 2 Jun 2026: **11 posts publicados** (9 de abril + 2 de mayo), **19 pen
 Si algo falla, el row de `content_queue` queda con `published=false` + `error` poblado.
 
 ### Pendiente
-- **⚠️ URGENTE: obtener PAGE token long-lived** (no expira) y reemplazar el actual en Supabase. Ver error #19 para el flujo completo. APP_ID y APP_SECRET en Meta for Developers → Me Gusta Colombia app.
+- **Revisar resultados de la campaña el jueves 6 Jun** — CTR, CPC, gasto real. Pausar ads con CTR < 0.8%.
+- **Transferir ad account al Business Portfolio "Me Gusta"** para poder usar system user token permanente en meta-ads MCP (en lugar del personal user token que expira en ~60 días).
+- **Renovar META_ACCESS_TOKEN en .mcp.json** antes de que expire (~60 días desde 3 Jun = ~2 Ago). Token es el personal user long-lived de Miguel.
 - Renovar `META_PAGE_TOKEN` con scope `pages_manage_posts` cuando se quiera publicar también en FB (no urgente, IG es el canal principal).
 - Reescribir `nextPublishDate` para que respete días libres ya ocupados sin pisarlos (hoy si ya hay un post en día X, el siguiente cae en X+1).
-- Privacy policy page en megusta.com.co
 - Pinterest Standard Access (requiere video demo)
 - Producir guía de Cali (4ta ciudad)
 - colombia-reel-template (Remotion parametrizado)
