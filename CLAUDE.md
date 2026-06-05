@@ -226,6 +226,31 @@ Estado al 2 Jun 2026: **11 posts publicados** (9 de abril + 2 de mayo), **19 pen
 
 Si algo falla, el row de `content_queue` queda con `published=false` + `error` poblado.
 
+### Jornada 5 Jun 2026 — CAPI + activación ads
+
+**Ads activados:**
+- Los 3 ads estaban PAUSED (creados así intencionalmente para revisión). Activados vía API. Pasaron a estado "Processing" → "Active" en Ads Manager.
+
+**Meta CAPI implementado (subscribe Edge Function v22):**
+- SHA-256 del email vía Web Crypto API nativa de Deno (sin dependencias)
+- Fire-and-forget después de Brevo exitoso (no bloquea el response)
+- Secret `META_CAPI_ACCESS_TOKEN` en Supabase (token personal long-lived de Miguel)
+- Source URL tomada del header `Referer` automáticamente
+- Solo para suscriptores nuevos (no duplicados)
+- Testeado end-to-end: `events_received: 1` confirmado en Meta Events Manager
+
+**Brevo IP restriction desactivada:**
+- Brevo bloqueaba IPs dinámicas de Supabase Edge Functions
+- Solución: deshabilitar "Blocking unauthorized IP addresses" para API keys en Brevo → Security
+- La API key ya provee autenticación suficiente
+
+**Pipeline completo al 5 Jun:**
+```
+Form submit → subscribe v22
+  ├── Brevo → lista 3
+  └── Meta CAPI → Lead event (email SHA-256, fire-and-forget)
+```
+
 ### Pendiente
 - **Revisar resultados de la campaña el jueves 6 Jun** — CTR, CPC, gasto real. Pausar ads con CTR < 0.8%.
 - **Transferir ad account al Business Portfolio "Me Gusta"** para poder usar system user token permanente en meta-ads MCP (en lugar del personal user token que expira en ~60 días).
