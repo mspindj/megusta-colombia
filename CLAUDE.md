@@ -138,7 +138,52 @@ colombiano funciona: "listo", "chévere" (con moderación), "te queda funcionand
 13. **Pipeline trigger en código, no en Postgres**: descubierto 27 May que el "trigger on_idea_approved" nunca existió. Decisión: el Server Action `approveIdea` dispara la function explícitamente con fetch + `AbortSignal.timeout(500)`. Razones: (a) debuggeable, (b) no requiere pg_net, (c) la function ya es idempotente.
 14. **Schedule de publicación**: 4 posts/semana en días lun(1)/mié(3)/vie(5)/dom(0) UTC. Coherente con el PUBLISH_DAYS de idea-to-queue. Si se atrasa el queue, redistribuir las publish_date — NO bombardear Meta con backlog.
 
-## Estado Actual (3 Jun 2026)
+### Jornada 6 Jun 2026 — Diagnóstico de conversión + rediseño landing
+
+**Revisión de campaña (3 días corriendo):**
+- CTR: **13.67%** (9x el objetivo de 1.5%)
+- CPC: **109 COP** (~$0.026 USD, 14x más barato que el target)
+- Gasto: 87,234 COP en 3 días (en presupuesto)
+- LPVs: 679 landing page views reales
+- Ad ganador: `MG_Ad3_NoDarPapaya` con 15.67% CTR (Meta le está dando 79% del presupuesto)
+- Ad débil: `MG_Ad1_TaxiHook` — solo 253 impresiones, Meta lo está starveando solo
+
+**Conversión: 0%** — descubierto auditando Brevo lista 3 vía API.
+- Lista 3 solo tiene 4 contactos, los 4 son tests propios (3 de abr 3 + capi-test de jun 5)
+- 679 LPVs reales → 0 suscriptores nuevos
+- Método de audit: `GET https://api.brevo.com/v3/contacts?listId=3&limit=100&sort=desc` con API key de Notion (Credenciales page)
+
+**Diagnóstico — el problema NO era el ad, era la landing:**
+- El form de email magnet estaba en la sección **5 de 9** (enterrado)
+- Tráfico frío de IG ad veía `$17` como primer CTA antes de cualquier oferta gratuita
+- Mismatch crítico: el ad promete intel táctico gratis, la landing pedía $17 de entrada
+
+**Rediseño implementado (commit 58f3d27, live en Vercel):**
+1. **Form de email embebido en el hero (above the fold)** — CTA primario ahora es "GET FREE CHEAT SHEET →" con input de email. Los botones de $17/$37 se demotaron a CTA secundario debajo de un divisor "OR BUY THE FULL GUIDE", en `size="default"` con borde sutil (`border-white/30 text-white/70`).
+2. **Sticky mobile bottom bar** — aparece tras scrollear 600px (reutiliza `showBackToTop` state), fixed al fondo, solo `md:hidden`. Un input + botón "FREE →" en h-10. Friction mínima.
+3. **Sección `#free-intel` rediseñada** — ahora muestra mockup visual del PDF (5 bullets del contenido: airport hacks, taxi prices, sim card, safe zones, day-1 moves) + form al lado como segundo touchpoint.
+
+**Tools utilizados en el rediseño:**
+- `ui-ux-pro-max` skill → framework de patterns (Lead Magnet + Form recomendado)
+- `21st-dev/magic` MCP → inspiración de hero con email capture + testimonial cards
+- `notion-fetch` MCP → credenciales Brevo (vivían en Credenciales & API Keys page)
+
+**Bug encontrado durante el build local:**
+- `Cannot find module '../lightningcss.darwin-arm64.node'` — bug conocido de npm con optional deps (issue npm/cli#4828)
+- Solución correcta: `rm -rf node_modules package-lock.json && npm install`
+- **NO commitear** `lightningcss-darwin-arm64` como dep explícita: es darwin-only, Vercel corre linux. Debe quedar como optional dep transitiva.
+
+**Decisión:**
+- Campaña se deja corriendo todo el fin de semana con daily budget 30k COP. No tiene fecha de fin (Meta corre indefinido hasta pausar manual).
+- Worst case sábado+domingo: ~60k COP más. Sigue dentro del presupuesto semanal de ~210k COP (~$50 USD).
+- **Próximo checkpoint: lunes 8 Jun** — verificar si el rediseño del hero aumentó la conversión a leads.
+
+**Métricas a observar el lunes:**
+- Suscriptores nuevos en Brevo lista 3 (objetivo: ≥1% conversion rate sobre LPVs = ~7-10 leads para los ~700-1000 LPVs proyectados al lunes)
+- CTR de cada ad (estable o subiendo)
+- Meta CAPI events_received (debería crecer en paralelo con suscriptores)
+
+## Estado Actual (6 Jun 2026)
 
 ### Completado
 - Landing page live en megusta.com.co (Next.js, Vercel, GitHub)
