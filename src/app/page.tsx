@@ -395,31 +395,87 @@ export default function Home() {
           >
             Your flight is booked. The clock started.
           </motion.p>
+
+          {/* PRIMARY CTA: Lead magnet form */}
+          <motion.div variants={heroChildVariants} className="mb-3">
+            <p className="font-mono text-xs text-primary/80 tracking-[0.2em] uppercase mb-3">
+              Free Intel — Colombia Arrival Cheat Sheet
+            </p>
+            {leadStatus === "success" ? (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="text-center py-3"
+              >
+                <span className="text-primary text-2xl">✓</span>
+                <p className="text-foreground font-semibold mt-1">
+                  Check your inbox — intel incoming.
+                </p>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleLeadSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                <Input
+                  type="email"
+                  placeholder="your@email.com"
+                  value={leadEmail}
+                  onChange={(e) => {
+                    setLeadEmail(e.target.value);
+                    if (leadStatus === "error") setLeadStatus("idle");
+                  }}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-primary"
+                  disabled={leadStatus === "loading"}
+                />
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="font-mono tracking-wider whitespace-nowrap text-sm"
+                  disabled={leadStatus === "loading"}
+                >
+                  {leadStatus === "loading" ? "Sending..." : "GET FREE CHEAT SHEET →"}
+                </Button>
+              </form>
+            )}
+            {leadStatus === "error" && (
+              <p className="text-xs text-destructive mt-2 text-center">{leadError}</p>
+            )}
+            <p className="text-xs text-white/40 mt-2 font-mono">
+              Free 1-page PDF. No spam. Decide about the full guide after.
+            </p>
+          </motion.div>
+
+          {/* SECONDARY: divider + paid CTAs */}
+          <motion.div variants={heroChildVariants} className="flex items-center gap-4 justify-center my-5">
+            <div className="h-px flex-1 max-w-[80px] bg-white/15" />
+            <span className="font-mono text-xs text-white/30 tracking-widest">OR BUY THE FULL GUIDE</span>
+            <div className="h-px flex-1 max-w-[80px] bg-white/15" />
+          </motion.div>
           <motion.div
             variants={heroChildVariants}
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-4"
+            className="flex flex-col sm:flex-row gap-3 justify-center mb-4"
           >
             <Button
-              size="lg"
-              className="font-mono tracking-wider text-sm"
+              size="default"
+              variant="outline"
+              className="font-mono tracking-wider text-xs border-white/30 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/50"
               onClick={scrollToCity}
             >
-              GET YOUR CITY BRIEFING — $17
+              CITY BRIEFING — $17
             </Button>
             <a
               href="https://megustacomco.gumroad.com/l/explorer-bundle"
               target="_blank"
               rel="noopener noreferrer"
-              className={buttonVariants({ variant: "outline", size: "lg", className: "font-mono tracking-wider text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground" })}
+              className={buttonVariants({ variant: "outline", size: "default", className: "font-mono tracking-wider text-xs border-white/30 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/50" })}
             >
               ALL 3 CITIES — $37 (SAVE 27%)
             </a>
           </motion.div>
           <motion.p
             variants={heroChildVariants}
-            className="text-muted-foreground text-xs font-mono"
+            className="text-white/30 text-xs font-mono"
           >
-            Takes 45 minutes to read. Covers your entire first 72 hours.
+            Takes 45 min to read. Covers your entire first 72 hours.
           </motion.p>
           {showChevron && (
             <motion.div
@@ -655,8 +711,8 @@ export default function Home() {
 
       <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
 
-      {/* LEAD MAGNET */}
-      <section id="free-intel" className="py-24 bg-card scroll-mt-16">
+      {/* LEAD MAGNET — second touchpoint (mid-page) */}
+      <section id="free-intel" className="py-20 bg-card scroll-mt-16">
         <motion.div
           variants={sectionVariants}
           initial={prefersReducedMotion ? false : "hidden"}
@@ -664,62 +720,85 @@ export default function Home() {
           viewport={viewportOnce}
           style={{ willChange: "transform" }}
         >
-          <div className="max-w-xl mx-auto px-6 text-center">
-            <p className="font-mono text-xs text-primary/70 tracking-[0.3em] uppercase mb-3">
-              FREE INTEL // ARRIVAL CHEAT SHEET
-            </p>
-            <h2 className="text-2xl sm:text-3xl font-extrabold mb-4">
-              Land in Colombia like you&apos;ve been before.
-            </h2>
-            <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-              Free 1-page PDF — airport hacks, taxi prices, first-day survival
-              moves. No spam, just intel.
-            </p>
-
-            {leadStatus === "success" ? (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-              >
-                <span className="text-primary text-2xl">✓</span>
-                <p className="text-foreground font-semibold mt-2">
-                  Check your inbox — intel incoming.
-                </p>
-              </motion.div>
-            ) : (
-              <form onSubmit={handleLeadSubmit}>
-                <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-                  <Input
-                    type="email"
-                    placeholder="your@email.com"
-                    value={leadEmail}
-                    onChange={(e) => {
-                      setLeadEmail(e.target.value);
-                      if (leadStatus === "error") setLeadStatus("idle");
-                    }}
-                    className="bg-[#0a0a0a] border-border"
-                    disabled={leadStatus === "loading"}
-                  />
-                  <Button
-                    type="submit"
-                    className="font-mono tracking-wider whitespace-nowrap"
-                    disabled={leadStatus === "loading"}
-                  >
-                    {leadStatus === "loading"
-                      ? "Sending..."
-                      : "Send Me the Cheat Sheet"}
-                  </Button>
+          <div className="max-w-3xl mx-auto px-6">
+            <div className="flex flex-col md:flex-row items-center gap-10">
+              {/* PDF preview mockup */}
+              <div className="flex-shrink-0">
+                <div className="w-40 h-56 bg-[#141414] border border-border rounded-lg flex flex-col items-center justify-center shadow-xl relative overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
+                  <p className="font-mono text-primary text-[9px] tracking-[0.25em] uppercase mb-2 px-3 text-center">Colombia Arrival</p>
+                  <p className="font-mono font-bold text-white text-sm tracking-wider px-3 text-center leading-tight">CHEAT<br/>SHEET</p>
+                  <div className="my-3 w-12 h-px bg-primary/40" />
+                  <ul className="text-[9px] text-muted-foreground font-mono space-y-1 px-4 w-full">
+                    {["Airport hacks", "Taxi prices", "Sim card", "Safe zones", "Day-1 moves"].map(item => (
+                      <li key={item} className="flex items-center gap-1.5">
+                        <span className="text-primary text-[8px]">→</span>{item}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="absolute bottom-2">
+                    <p className="font-mono text-[8px] text-primary/50 tracking-widest">FREE</p>
+                  </div>
                 </div>
-                {leadStatus === "error" && (
-                  <p className="text-xs text-destructive mt-3">{leadError}</p>
-                )}
-              </form>
-            )}
+              </div>
 
-            <p className="text-xs text-muted-foreground mt-6 font-mono">
-              Join 2,847+ travelers who showed up prepared. Unsubscribe anytime.
-            </p>
+              {/* Form */}
+              <div className="flex-1 text-center md:text-left">
+                <p className="font-mono text-xs text-primary/70 tracking-[0.3em] uppercase mb-3">
+                  FREE INTEL // ARRIVAL CHEAT SHEET
+                </p>
+                <h2 className="text-2xl sm:text-3xl font-extrabold mb-3">
+                  One page. Everything you need for day one.
+                </h2>
+                <p className="text-muted-foreground mb-6 text-sm">
+                  Airport taxi prices, SIM card spots, first-night safe zones, scam patterns to spot immediately. Read it on the plane.
+                </p>
+
+                {leadStatus === "success" ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="py-2"
+                  >
+                    <span className="text-primary text-2xl">✓</span>
+                    <p className="text-foreground font-semibold mt-2">
+                      Check your inbox — intel incoming.
+                    </p>
+                  </motion.div>
+                ) : (
+                  <form onSubmit={handleLeadSubmit}>
+                    <div className="flex flex-col sm:flex-row gap-3 max-w-md">
+                      <Input
+                        type="email"
+                        placeholder="your@email.com"
+                        value={leadEmail}
+                        onChange={(e) => {
+                          setLeadEmail(e.target.value);
+                          if (leadStatus === "error") setLeadStatus("idle");
+                        }}
+                        className="bg-background border-border"
+                        disabled={leadStatus === "loading"}
+                      />
+                      <Button
+                        type="submit"
+                        className="font-mono tracking-wider whitespace-nowrap"
+                        disabled={leadStatus === "loading"}
+                      >
+                        {leadStatus === "loading" ? "Sending..." : "Send Me the PDF"}
+                      </Button>
+                    </div>
+                    {leadStatus === "error" && (
+                      <p className="text-xs text-destructive mt-2">{leadError}</p>
+                    )}
+                  </form>
+                )}
+
+                <p className="text-xs text-muted-foreground mt-4 font-mono">
+                  Joined by 2,847+ travelers. No spam. Unsubscribe anytime.
+                </p>
+              </div>
+            </div>
           </div>
         </motion.div>
       </section>
@@ -1036,6 +1115,41 @@ export default function Home() {
           </p>
         </div>
       </motion.footer>
+
+      {/* STICKY MOBILE LEAD CAPTURE BAR */}
+      <AnimatePresence>
+        {showBackToTop && leadStatus !== "success" && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur-md border-t border-border px-4 py-3 shadow-2xl"
+          >
+            <form onSubmit={handleLeadSubmit} className="flex gap-2 max-w-sm mx-auto">
+              <Input
+                type="email"
+                placeholder="Get free cheat sheet →"
+                value={leadEmail}
+                onChange={(e) => {
+                  setLeadEmail(e.target.value);
+                  if (leadStatus === "error") setLeadStatus("idle");
+                }}
+                className="bg-card border-border text-sm h-10"
+                disabled={leadStatus === "loading"}
+              />
+              <Button
+                type="submit"
+                size="sm"
+                className="font-mono text-xs whitespace-nowrap h-10 px-3"
+                disabled={leadStatus === "loading"}
+              >
+                {leadStatus === "loading" ? "..." : "FREE →"}
+              </Button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* BACK TO TOP */}
       <AnimatePresence>
