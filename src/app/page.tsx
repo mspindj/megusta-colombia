@@ -324,10 +324,20 @@ export default function Home() {
             style={{
               backgroundImage: `url(${bg})`,
               opacity: bgIndex === i ? 1 : 0,
+              filter: "saturate(0.4) brightness(0.55) contrast(0.9)",
             }}
           />
         ))}
-        <div className="absolute inset-0" style={{ background: "rgba(10,10,10,0.65)" }} />
+        {/* Strong uniform overlay — map stays as subtle texture */}
+        <div className="absolute inset-0" style={{ background: "rgba(10,10,10,0.78)" }} />
+        {/* Bottom-fade so content blends into page background */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to bottom, transparent 50%, rgba(10,10,10,0.85) 100%)",
+          }}
+        />
         <motion.div
           className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 text-center py-32"
           variants={heroStagger}
