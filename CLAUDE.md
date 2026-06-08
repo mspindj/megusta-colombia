@@ -183,7 +183,80 @@ colombiano funciona: "listo", "chévere" (con moderación), "te queda funcionand
 - CTR de cada ad (estable o subiendo)
 - Meta CAPI events_received (debería crecer en paralelo con suscriptores)
 
-## Estado Actual (6 Jun 2026)
+### Jornada 8 Jun 2026 — Pivote de objetivo Meta + reframe completo del hero
+
+**Checkpoint del lunes (5 días de campaña):**
+- Gasto acumulado: 142,455 COP
+- LPVs: **1,254** (de 679 del viernes)
+- CTR: 15.17% (subió de 13.67%)
+- CPC: 96.58 COP (bajó de 109)
+- **Conversiones: sigue en 0** sobre tráfico real
+
+**Hallazgo principal — el form NO está roto:**
+- Test end-to-end con Claude Preview (simulación de submit programático): input → submit → Brevo lista 3 → ✓ en 3 segundos
+- Test directo a Edge Function via curl: `{"success":true}` 200 OK, contacto llegó a Brevo
+- HTML de producción confirmado vía curl: el form está desplegado
+- Backend, frontend, pipeline — todos verdes
+
+**Diagnóstico real: tráfico de baja calidad.**
+- CTR de 15% en IG es 10x el benchmark normal (1-2%)
+- LPV rate 84% es altísimo (normal 50-70%)
+- 0% conversion sobre 1,254 LPVs es estadísticamente extremo
+- Breakdown por país: uno de los 5 países alcanzó CTR de 21.84% (firma de click farms)
+- Patrón clásico: `OUTCOME_TRAFFIC` le dice a Meta "encuéntrame clicks baratos" → Meta optimiza para clicks, no para humanos con intención
+
+**Pivote ejecutado — campaña nueva con OUTCOME_LEADS:**
+- Vieja pausada: `52507937855697` (MG_Traffic_ColombiaVisitors_CheatSheet_Jun26)
+- Nueva activa: `52512402757497` (MG_Leads_ColombiaVisitors_CheatSheet_Jun26)
+- Ad set: `52512402834097` — optimization_goal=`OFFSITE_CONVERSIONS`, promoted_object={pixel_id:1525809615712600, custom_event_type:LEAD}
+- Ads: solo los 2 ganadores duplicados con sus creative IDs (`992104946537315` NoDarPapaya + `1688225042216359` FaceHook)
+- Sin Audience Network, sin Advantage+ audience, edad 25-45 (subida de 23-42)
+
+**Iteraciones de copy del hero (3 versiones en el día):**
+
+1. **Visual fix (commit ffda830):** mapas de fondo desaturados a `filter: saturate(0.4) brightness(0.55) contrast(0.9)` + overlay 0.78. El form dorado domina ahora.
+
+2. **CRO quick wins (commit 7615877):** aplicado framework `page-cro`. Score inicial 67/100 = "Low Readiness". Cambios: headline localiza ("Colombia" en H1), CTA "GET FREE CHEAT SHEET" → "GET THE INTEL", mini PDF preview inline en el hero, `$17/$37` eliminados del hero, sub con specificity ("taxi prices, SIM card spots, scam patterns, safe zones"), background rotation pausa con `onFocus` en el input.
+
+3. **Reframe insider/status (commit e4f7048):** descartado el frame amarillista "Don't get scammed your first 72 hours in Colombia" — pintaba Colombia como peligro. Reemplazo:
+   - H1: **"Walk into Colombia like a local."**
+   - Sub: "Real taxi rates, where to get a SIM in 5 minutes, which neighborhoods locals actually live in — everything the guidebooks miss. Free 72-hour briefing."
+   - CTA: **"SKIP THE LEARNING CURVE →"**
+   - Microcopy: "Real safe zones" → "Local neighborhoods" (consistencia con frame no-defensivo)
+
+**Decisiones sobre A/B testing:**
+- **NO se corre A/B test todavía.** A volumen actual (~180 LPVs/día) y conversion target 2-5%, capturamos 3-9 conversiones/día. Para detectar mejora >20% con 95% confianza → ~400-500 conversiones por variante = 5-6 meses por test. Inviable.
+- **Sequential testing en su lugar:**
+  - Semana 1 (8-14 Jun): Combo 2 ("Walk into Colombia like a local")
+  - Semana 2 (15-21 Jun): Combo 4 ("Walk into Colombia like a local" + "Taxi prices that don't change when you say amigo") — más punchy, social-shareable
+  - Semana 3 (22-28 Jun): el ganador con presupuesto subido
+  - A/B test real solo cuando alcancemos 50+ conversiones/semana en una variante
+
+**Aprendizajes del día:**
+
+1. **0 leads sobre 1,254 LPVs NO significa form roto.** Significa que Meta optimizó para click farms. Verificar siempre el form end-to-end antes de asumir backend.
+2. **Frame amarillista penaliza la marca, no solo el CTR.** "Don't get scammed in Colombia" pintaba el país como peligroso — narrativa post-Narcos que la generación ya combate. Frame insider/status ("walk in like a local") vende lo mismo sin defensa.
+3. **`OUTCOME_TRAFFIC` es trampa en Meta.** Le pides clicks baratos, te los entrega — sin importar si son humanos con intención. `OUTCOME_LEADS` con Pixel + CAPI configurado es el camino correcto desde el día 1.
+4. **CTR sospechosamente alto + LPV rate alto + 0 conversiones = firma de click farms.** Tres anomalías juntas, no atribuible a casualidad.
+5. **`safe zones` en microcopy es un olor sutil.** Aunque positivo en superficie, mantiene el frame defensivo. Mejor "local neighborhoods" — sello status, no protección.
+
+**Estado al cierre del 8 Jun:**
+- Campaña Leads activa, learning phase iniciada
+- Landing con reframe completo en producción (commit `e4f7048`)
+- Brevo lista 3: 6 contactos (4 históricos + 2 de mis tests del día)
+- Próximo checkpoint: **miércoles 10 Jun (48 horas)** — Brevo lista 3, CTR de la nueva campaña, primeros datos de cost-per-lead
+
+### Errores conocidos a evitar (nuevo)
+
+23. **Frame amarillista en copy.** Nunca usar "Don't get scammed", "evita robos", "peligros de [país]" en H1/CTAs principales. Vende status/competencia ("like a local", "ahead of the curve"), no protección. El miedo CTR-iza pero quema marca y atrae cohort de baja calidad.
+
+24. **`OUTCOME_TRAFFIC` para lead magnets.** Meta optimiza por clicks baratos, no por humanos con intent. Síntoma: CTR 10x normal + 0 conversiones. Siempre arrancar campañas de lead magnet con `OUTCOME_LEADS` y Pixel event configurado, NUNCA con `OUTCOME_TRAFFIC`.
+
+25. **A/B testing prematuro con bajo volumen.** Si capturás menos de 50 conversiones/semana por variante, los resultados son ruido estadístico. Sequential testing semana-a-semana es más honesto. A/B test real solo con volumen alto (>50 conv/sem/variante).
+
+26. **0 conversiones ≠ form roto.** Antes de tocar código del frontend o backend, verificar end-to-end via curl o preview eval. La causa raíz frecuentemente está upstream (tráfico, oferta) o estructural (hero no above-the-fold).
+
+## Estado Actual (8 Jun 2026)
 
 ### Completado
 - Landing page live en megusta.com.co (Next.js, Vercel, GitHub)
