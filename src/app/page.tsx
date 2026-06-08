@@ -211,6 +211,7 @@ export default function Home() {
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [leadError, setLeadError] = useState("");
+  const [emailFocused, setEmailFocused] = useState(false);
   const prefersReducedMotion = useReducedMotion();
   const { scrollY } = useScroll();
 
@@ -226,9 +227,12 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // Pause background rotation while user is focused on the email input —
+    // movement is a distraction during a conversion moment.
+    if (emailFocused) return;
     const id = setInterval(() => setBgIndex((i) => (i + 1) % 3), 4000);
     return () => clearInterval(id);
-  }, []);
+  }, [emailFocused]);
 
   const scrollToCity = () => {
     document.getElementById("cities")?.scrollIntoView({ behavior: "smooth" });
@@ -361,17 +365,16 @@ export default function Home() {
             variants={heroChildVariants}
             className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6"
           >
-            Tourists get scammed, overpay, and waste their first 3 days.
-            <br className="sm:hidden" />{" "}
-            <span className="text-primary">You won&apos;t.</span>
+            Don&apos;t get scammed your first 72 hours in{" "}
+            <span className="text-primary">Colombia.</span>
           </motion.h1>
           <motion.p
             variants={heroChildVariants}
             className="text-muted-foreground text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed"
           >
-            Every city has cheat codes the locals don&apos;t post online. We
-            put them in a 72-hour tactical briefing — so you land prepared, not
-            panicked.
+            The exact taxi prices, SIM card spots, scam patterns and safe zones
+            for Bogotá, Medellín and Cartagena — the local intel that Reddit
+            threads don&apos;t have.
           </motion.p>
           <motion.div
             variants={heroChildVariants}
@@ -406,87 +409,85 @@ export default function Home() {
             Your flight is booked. The clock started.
           </motion.p>
 
-          {/* PRIMARY CTA: Lead magnet form */}
-          <motion.div variants={heroChildVariants} className="mb-3">
-            <p className="font-mono text-xs text-primary/80 tracking-[0.2em] uppercase mb-3">
-              Free Intel — Colombia Arrival Cheat Sheet
+          {/* PRIMARY CTA: Lead magnet form with PDF preview */}
+          <motion.div variants={heroChildVariants} className="mb-4">
+            <p className="font-mono text-xs text-primary/80 tracking-[0.2em] uppercase mb-4 text-center">
+              Free Briefing — Colombia Arrival Intel
             </p>
+
             {leadStatus === "success" ? (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className="text-center py-3"
+                className="text-center py-3 max-w-md mx-auto"
               >
-                <span className="text-primary text-2xl">✓</span>
+                <span className="text-primary text-3xl">✓</span>
                 <p className="text-foreground font-semibold mt-1">
                   Check your inbox — intel incoming.
                 </p>
+                <p className="text-xs text-white/50 mt-2 font-mono">
+                  Look for a message from hola@megusta.com.co (check spam if needed)
+                </p>
               </motion.div>
             ) : (
-              <form onSubmit={handleLeadSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-                <Input
-                  type="email"
-                  placeholder="your@email.com"
-                  value={leadEmail}
-                  onChange={(e) => {
-                    setLeadEmail(e.target.value);
-                    if (leadStatus === "error") setLeadStatus("idle");
-                  }}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-primary"
-                  disabled={leadStatus === "loading"}
-                />
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="font-mono tracking-wider whitespace-nowrap text-sm"
-                  disabled={leadStatus === "loading"}
-                >
-                  {leadStatus === "loading" ? "Sending..." : "GET FREE CHEAT SHEET →"}
-                </Button>
-              </form>
+              <div className="flex items-stretch gap-4 max-w-md mx-auto">
+                {/* Mini PDF preview thumbnail */}
+                <div className="flex-shrink-0 w-16 sm:w-20 bg-[#1a1a1a] border border-white/10 rounded flex flex-col items-center justify-center py-2 px-1.5 shadow-lg">
+                  <div className="w-full h-0.5 bg-primary mb-2" />
+                  <p className="font-mono text-[7px] sm:text-[8px] text-primary tracking-[0.1em] uppercase text-center leading-tight">
+                    Colombia<br/>Arrival
+                  </p>
+                  <p className="font-mono font-bold text-white text-[9px] sm:text-[10px] tracking-wider mt-1 text-center leading-tight">
+                    INTEL<br/>BRIEF
+                  </p>
+                  <div className="my-1.5 w-6 h-px bg-primary/40" />
+                  <ul className="text-[5px] sm:text-[6px] text-white/50 font-mono space-y-0.5 w-full px-1 leading-tight">
+                    <li>→ Taxi $</li>
+                    <li>→ Sim</li>
+                    <li>→ Zones</li>
+                    <li>→ Day 1</li>
+                  </ul>
+                  <p className="font-mono text-[6px] text-primary/60 tracking-widest mt-1">FREE</p>
+                </div>
+
+                {/* Form */}
+                <form onSubmit={handleLeadSubmit} className="flex-1 flex flex-col gap-2">
+                  <Input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={leadEmail}
+                    onChange={(e) => {
+                      setLeadEmail(e.target.value);
+                      if (leadStatus === "error") setLeadStatus("idle");
+                    }}
+                    onFocus={() => setEmailFocused(true)}
+                    onBlur={() => setEmailFocused(false)}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-primary h-11"
+                    disabled={leadStatus === "loading"}
+                  />
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="font-mono tracking-wider whitespace-nowrap text-sm w-full h-11"
+                    disabled={leadStatus === "loading"}
+                  >
+                    {leadStatus === "loading" ? "Sending..." : "GET THE INTEL →"}
+                  </Button>
+                </form>
+              </div>
             )}
+
             {leadStatus === "error" && (
               <p className="text-xs text-destructive mt-2 text-center">{leadError}</p>
             )}
-            <p className="text-xs text-white/40 mt-2 font-mono">
-              Free 1-page PDF. No spam. Decide about the full guide after.
-            </p>
-          </motion.div>
 
-          {/* SECONDARY: divider + paid CTAs */}
-          <motion.div variants={heroChildVariants} className="flex items-center gap-4 justify-center my-5">
-            <div className="h-px flex-1 max-w-[80px] bg-white/15" />
-            <span className="font-mono text-xs text-white/30 tracking-widest">OR BUY THE FULL GUIDE</span>
-            <div className="h-px flex-1 max-w-[80px] bg-white/15" />
+            {leadStatus !== "success" && (
+              <p className="text-xs text-white/45 mt-3 text-center max-w-md mx-auto leading-relaxed">
+                <span className="font-mono">Specific prices · Real safe zones · No spam · Unsubscribe anytime</span>
+              </p>
+            )}
           </motion.div>
-          <motion.div
-            variants={heroChildVariants}
-            className="flex flex-col sm:flex-row gap-3 justify-center mb-4"
-          >
-            <Button
-              size="default"
-              variant="outline"
-              className="font-mono tracking-wider text-xs border-white/30 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/50"
-              onClick={scrollToCity}
-            >
-              CITY BRIEFING — $17
-            </Button>
-            <a
-              href="https://megustacomco.gumroad.com/l/explorer-bundle"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={buttonVariants({ variant: "outline", size: "default", className: "font-mono tracking-wider text-xs border-white/30 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/50" })}
-            >
-              ALL 3 CITIES — $37 (SAVE 27%)
-            </a>
-          </motion.div>
-          <motion.p
-            variants={heroChildVariants}
-            className="text-white/30 text-xs font-mono"
-          >
-            Takes 45 min to read. Covers your entire first 72 hours.
-          </motion.p>
           {showChevron && (
             <motion.div
               className="mx-auto mt-16"
