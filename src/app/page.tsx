@@ -365,16 +365,16 @@ export default function Home() {
             variants={heroChildVariants}
             className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6"
           >
-            Don&apos;t get scammed your first 72 hours in{" "}
-            <span className="text-primary">Colombia.</span>
+            Walk into Colombia{" "}
+            <span className="text-primary">like a local.</span>
           </motion.h1>
           <motion.p
             variants={heroChildVariants}
             className="text-muted-foreground text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed"
           >
-            The exact taxi prices, SIM card spots, scam patterns and safe zones
-            for Bogotá, Medellín and Cartagena — the local intel that Reddit
-            threads don&apos;t have.
+            Real taxi rates, where to get a SIM in 5 minutes, which neighborhoods
+            locals actually live in — everything the guidebooks miss. Free
+            72-hour briefing.
           </motion.p>
           <motion.div
             variants={heroChildVariants}
@@ -472,7 +472,7 @@ export default function Home() {
                     className="font-mono tracking-wider whitespace-nowrap text-sm w-full h-11"
                     disabled={leadStatus === "loading"}
                   >
-                    {leadStatus === "loading" ? "Sending..." : "GET THE INTEL →"}
+                    {leadStatus === "loading" ? "Sending..." : "SKIP THE LEARNING CURVE →"}
                   </Button>
                 </form>
               </div>
@@ -484,7 +484,7 @@ export default function Home() {
 
             {leadStatus !== "success" && (
               <p className="text-xs text-white/45 mt-3 text-center max-w-md mx-auto leading-relaxed">
-                <span className="font-mono">Specific prices · Real safe zones · No spam · Unsubscribe anytime</span>
+                <span className="font-mono">Local prices · Local neighborhoods · No spam · Unsubscribe anytime</span>
               </p>
             )}
           </motion.div>
