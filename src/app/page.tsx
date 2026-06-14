@@ -372,9 +372,8 @@ export default function Home() {
             variants={heroChildVariants}
             className="text-muted-foreground text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed"
           >
-            Real taxi rates, where to get a SIM in 5 minutes, which neighborhoods
-            locals actually live in — everything the guidebooks miss. Free
-            72-hour briefing.
+            Taxi prices that don't change when you say amigo. A SIM card in 5
+            minutes. The neighborhoods locals actually live in. Free briefing.
           </motion.p>
           <motion.div
             variants={heroChildVariants}
