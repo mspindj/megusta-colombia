@@ -20,7 +20,8 @@ async function sha256(text: string): Promise<string> {
 async function sendMetaCAPI(
   email: string,
   sourceUrl: string,
-  accessToken: string
+  accessToken: string,
+  eventId: string,
 ): Promise<void> {
   const emailHash = await sha256(email);
   const eventTime = Math.floor(Date.now() / 1000);
@@ -29,6 +30,7 @@ async function sendMetaCAPI(
     data: [{
       event_name: "Lead",
       event_time: eventTime,
+      event_id: eventId,
       action_source: "website",
       event_source_url: sourceUrl,
       user_data: {
@@ -113,7 +115,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { email } = await req.json();
+    const { email, event_id } = await req.json();
+    const eventId: string = event_id || crypto.randomUUID();
 
     if (!email || !email.includes("@")) {
       return new Response(JSON.stringify({ error: "Invalid email" }), {
@@ -176,7 +179,7 @@ Deno.serve(async (req: Request) => {
       // Meta CAPI — fire-and-forget
       const CAPI_TOKEN = Deno.env.get("META_CAPI_ACCESS_TOKEN");
       if (CAPI_TOKEN) {
-        sendMetaCAPI(email, sourceUrl, CAPI_TOKEN).catch(err =>
+        sendMetaCAPI(email, sourceUrl, CAPI_TOKEN, eventId).catch(err =>
           console.error("Meta CAPI error (non-blocking):", err)
         );
       }

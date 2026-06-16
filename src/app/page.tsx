@@ -247,13 +247,14 @@ export default function Home() {
     }
     setLeadStatus("loading");
     setLeadError("");
+    const eventId = crypto.randomUUID();
     try {
       const response = await fetch(
         "https://uocwxwvcrnkfnnoyjzyb.supabase.co/functions/v1/subscribe",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: leadEmail.trim() }),
+          body: JSON.stringify({ email: leadEmail.trim(), event_id: eventId }),
         }
       );
       const data = await response.json();
@@ -261,7 +262,7 @@ export default function Home() {
         setLeadStatus("success");
         // Fire Meta Pixel Lead event on successful subscription
         if (typeof window !== "undefined" && typeof (window as Window & { fbq?: (...args: unknown[]) => void }).fbq === "function") {
-          (window as Window & { fbq?: (...args: unknown[]) => void }).fbq!("track", "Lead", { content_name: "Colombia Cheat Sheet" });
+          (window as Window & { fbq?: (...args: unknown[]) => void }).fbq!("track", "Lead", { content_name: "Colombia Cheat Sheet", event_id: eventId });
         }
       } else {
         setLeadError(
