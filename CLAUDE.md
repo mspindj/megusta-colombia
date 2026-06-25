@@ -256,9 +256,70 @@ colombiano funciona: "listo", "chévere" (con moderación), "te queda funcionand
 
 26. **0 conversiones ≠ form roto.** Antes de tocar código del frontend o backend, verificar end-to-end via curl o preview eval. La causa raíz frecuentemente está upstream (tráfico, oferta) o estructural (hero no above-the-fold).
 
-## Estado Actual (8 Jun 2026)
+### Jornada 19 Jun 2026 — Video ad + diagnóstico funnel email
+
+**Meta campaña (Jun 8-19):**
+- 26 leads reales Brevo (semana Combo 4: 16 leads en 5 días = 3.2/día, mejor semana)
+- CPL ~$1.93 USD (Brevo), bien bajo target $3
+- FaceHook ad pausado (bajo rendimiento, Meta lo había starveado)
+- IntelAdReel (video) creado y subido como segundo ad activo
+
+**Video ad creado:**
+- `editor-pro-max-main/src/compositions/IntelAdReel.tsx` — 15s, 450 frames @30fps
+- TTS generado con `scripts/generate-tts.py` (Gemini, voz Orus) → `intel-ad-voice.wav`
+- Renderizado: `editor-pro-max-main/out/intel-ad-reel.mp4` (9.5 MB)
+- Subido a Meta Ad Account, activo como `MG_LeadOpt_IntelAdReel_TaxiPrices`
+
+**Diagnóstico Brevo email automation:**
+- Confirmado vía `leads/logs-export.csv` (CSV exportado desde Brevo UI): automation SÍ funciona
+- Email 1: 20 enviados, Email 2: 19, Email 3: 8, Email 4: 4
+- Los 3 leads más antiguos (unchartedcurry, ryan.burdon, li.gayle) en step 10, esperando Email 5
+
+### Jornada 25 Jun 2026 — Diagnóstico campaña + refuerzo funnel email
+
+**Estado campaña Jun 8-25:**
+- Spend total: 514,221 COP (~$125 USD)
+- Leads Brevo reales: **34** (Jun 8-14: 9 | Jun 15-21: 18 | Jun 22-25: 5)
+- NoDarPapaya: 48 leads Meta, CPL $1.90 USD, CTR 17.5% — winner absoluto
+- IntelAdReel: 5 leads Meta, CPL $6.65 USD, CTR 2.76% — PAUSADO hoy
+
+**Acciones ejecutadas:**
+1. **IntelAdReel pausado** (ID: 52522978785297) — CPL 3.5x peor que NoDarPapaya, comía 27% del presupuesto
+2. **PS de venta agregados a templates Brevo 10, 11, 12** — soft close al final de cada email de contenido
+3. **2 nuevos templates creados en Brevo:**
+   - ID 24: "Lead Magnet — 9. Follow Up D10" — subject "Meant to follow up" (Day 10)
+   - ID 25: "Lead Magnet — 10. Final Pitch D21" — subject "Last one on this" (Day 21)
+4. User agregó ambos templates a Automation #1 en Brevo
+
+**Diagnóstico 0 ventas Gumroad:**
+- Un solo pitch (Email 4, Day 8) en toda la secuencia era el problema estructural
+- El funnel entregaba valor sin cerrar venta en emails 10-21
+- Solución aplicada: PS en 3 emails de contenido + 2 emails nuevos con pitch explícito
+
+**Funnel actual (10 emails, 4 momentos de venta):**
+```
+Día 0  → Cheat sheet (template 1)
+Día 2  → Taxi intel (template 2)
+Día 5  → Ciudad (template 3)
+Día 8  → PITCH 1 (template 4)
+Día 10 → PITCH 2 follow-up (template 24) ← nuevo
+Día 12 → Laureles + PS venta (template 10) ← reforzado
+Día 16 → SIM card + PS venta (template 11) ← reforzado
+Día 19 → Budget + PS venta (template 12) ← reforzado
+Día 21 → PITCH 3 final (template 25) ← nuevo
+Día 23 → "Where are you going?" (template 13)
+```
+
+**Errores encontrados:**
+- `IntelAdReel` (video) tuvo CTR 2.76% vs 17.5% del estático — el formato video no detiene el scroll en IG para esta audiencia
+- Video ad generó 356 video views pero muy pocos clicks — engagement ≠ intent en este contexto
+
+## Estado Actual (25 Jun 2026)
 
 ### Completado
+- **Funnel email reforzado (25 Jun)**: PS de venta en emails 10/11/12 + 2 nuevos emails (Day 10 follow-up, Day 21 pitch final). 10 emails, 4 momentos de venta.
+- **IntelAdReel video ad pausado (25 Jun)**: CPL $6.65 vs $1.90 NoDarPapaya. Presupuesto 100% a NoDarPapaya.
+- **34 leads reales en Brevo lista 3** (al 25 Jun). Automation activa y funcionando correctamente.
 - Landing page live en megusta.com.co (Next.js, Vercel, GitHub)
 - Lead magnet funnel: form → Supabase subscribe → Brevo → 4 email sequence
 - Arrival Cheat Sheet PDF (Figma, mobile-first, WCAG AA/AAA) en Gumroad $0
@@ -420,4 +481,4 @@ Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
 NO guardar credenciales en este archivo ni en archivos commiteados.
 
 ---
-*Última actualización: 22 May 2026*
+*Última actualización: 25 Jun 2026*
