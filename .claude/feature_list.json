@@ -1,6 +1,6 @@
 {
   "project": "megusta-colombia",
-  "last_updated": "2026-05-22",
+  "last_updated": "2026-07-01",
   "features": [
     {
       "id": "content-ideas-table",
@@ -8,31 +8,47 @@
       "status": "done",
       "execution_mode": "inline",
       "priority": "high",
-      "notes": "Creada 2026-05-21. Campos: id, source, origin, title, url, score, content_type, status, generated_copy, generated_hashtags, notes, timestamps."
+      "notes": "Creada 2026-05-21. Constraints actualizadas 2026-05-27: content_type acepta image/reel/carousel, status acepta pending/approved/rejected/used/in_progress."
     },
     {
       "id": "intel-gather-edge-function",
-      "title": "Edge Function: intel-gather (Apify → content_ideas)",
+      "title": "Edge Function: intel-gather (Apify Google Search Scraper → content_ideas)",
       "status": "done",
       "execution_mode": "sdd",
       "priority": "high",
-      "notes": "pg_cron lunes 8am → Apify Reddit scraper (r/Colombia, r/bogota, r/medellin, r/digitalnomad) → filtra score>10 → INSERT content_ideas → notifica via Brevo a mspin.dj@gmail.com. Implementado 2026-05-21. Pendiente: deploy + secrets + pg_cron SQL."
+      "notes": "v17 (2026-07-01). Migrado de HN Algolia (0 hits en queries travel-focused, sin volumen) a Apify google-search-scraper via run-sync-get-dataset-items. 11 queries (incluye site:reddit.com para rodear el bloqueo 403 de Reddit + cruces con modismos del cheat sheet). Costo ~$0.05/corrida sobre $5/mes gratis de Apify. Filtro blocked_keywords ampliado con términos institucionales (bribe, corrupt cop, extortion, etc.) — regla 'todo es intel de calle' desde 2026-07-01."
     },
     {
       "id": "generate-copy-edge-function",
-      "title": "Edge Function: generate-copy (idea aprobada → content_queue)",
+      "title": "Edge Function: idea-to-queue (approve → Haiku + imagen + queue)",
       "status": "done",
       "execution_mode": "sdd",
       "priority": "high",
-      "notes": "DB trigger on_idea_approved → idea-to-queue → Claude Haiku (caption+hashtags+hook) → Satori 1080x1080 PNG → Supabase Storage → content_queue. Implementado y deployado 2026-05-22. Función ACTIVE, trigger on_idea_approved confirmado en DB."
+      "notes": "v13. Trigger: approveIdea Server Action (fetch fire-and-forget AbortSignal.timeout(500)). Haiku genera caption/hashtags/hook EN. Satori 1080x1080 PNG (Noto Sans TTF, no WOFF2). Upload Supabase Storage (SERVICE_ROLE_JWT, no SUPABASE_SERVICE_ROLE_KEY). Inserta en content_queue. Idempotente: skip si generated_copy ya existe."
+    },
+    {
+      "id": "auto-publish",
+      "title": "Edge Function: auto-publish (content_queue → IG via meta-publish)",
+      "status": "done",
+      "execution_mode": "inline",
+      "priority": "high",
+      "notes": "v9. pg_cron lun/mié/vie/dom 14:00 UTC (9am COL). Lee content_queue WHERE published=false AND publish_date<=today ORDER BY date ASC LIMIT 1. Llama meta-publish (solo IG por ahora, FB requiere scope pages_manage_posts pendiente). Marca published=true + ig_post_id. En error: escribe error en row. Reescrita 2026-05-27 (antes leía array hardcodeado)."
+    },
+    {
+      "id": "dashboard",
+      "title": "Dashboard /dashboard — lista y gestión de content_ideas",
+      "status": "done",
+      "execution_mode": "inline",
+      "priority": "high",
+      "notes": "Auth email/password (email fijo hola@megusta.com.co, solo pedir contraseña). Server component + IdeaRow client component. Columnas: título, tipo (image/carousel/reel), score, status. Acciones: Aprobar (dispara pipeline) + Borrar. Expandable row con notes. Middleware simplificado (Edge Runtime, cookie presence check)."
     },
     {
       "id": "colombia-taxi-calculator",
-      "title": "Mini-app: Calculadora de taxis Colombia",
-      "status": "spec_ready",
+      "title": "Mini-app: Calculadora de taxis Colombia (/taxi)",
+      "status": "done",
       "execution_mode": "sdd",
       "priority": "medium",
-      "notes": "Página en megusta.com.co/taxi. Input: barrio origen + destino + ciudad. Output: precio justo vs precio gringo. Captura email → Brevo funnel → upsell guía. Meta Pixel desde día 1. BLOQUEANTE: META_PAGE_TOKEN en Supabase secrets está inválido — renovar antes de arrancar spec."
+      "notes": "Live en megusta.com.co/taxi. 8 rutas, 3 ciudades, precios hardcodeados (sin Maps API). Modal de captura de email → taxi-subscribe Edge Function → Brevo. Meta Pixel: Lead event al capturar email."
     },
     {
       "id": "colombia-reel-template",
@@ -45,12 +61,20 @@
     },
     {
       "id": "remotion-render-server",
-      "title": "Servidor de render Remotion en Render.com",
+      "title": "Servidor de render Remotion",
       "status": "pending",
       "execution_mode": "sdd",
       "priority": "medium",
-      "notes": "Express server: POST /render → remotion render ColombiaReel → upload Supabase Storage → devuelve video_url. Deploy Render.com free tier.",
+      "notes": "Express: POST /render → remotion render ColombiaReel → upload Storage → devuelve video_url.",
       "blocked_by": ["colombia-reel-template"]
+    },
+    {
+      "id": "privacy-policy-page",
+      "title": "Página /privacy en megusta.com.co",
+      "status": "pending",
+      "execution_mode": "inline",
+      "priority": "low",
+      "notes": "Requerida para Meta Pixel compliance."
     }
   ]
 }

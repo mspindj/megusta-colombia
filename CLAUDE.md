@@ -95,6 +95,30 @@ colombiano funciona: "listo", "chévere" (con moderación), "te queda funcionand
 - Una idea por oración. Si entraría en 280 caracteres, está bien.
 - Números específicos siempre. Sin calificativos vacíos. Sin signos de exclamación.
 
+### Contenido institucional — "todo es intel de calle" (regla desde 1 Jul 2026)
+**Nunca acusar ni especular sobre instituciones** (policía, migración, gobierno, alcaldías).
+El contenido describe lo que el visitante puede observar o necesita saber — no explica
+por qué una institución actúa de cierta forma.
+
+- ✅ Permitido: "El Hueco tiene más tráfico peatonal este año", "Transmilenio en la noche
+  se siente distinto que en la mañana", "hay más gente en la calle en Laureles ahora"
+  (observación neutral, verificable, sin atribuir motivo institucional)
+- ❌ Prohibido: "la policía rota cada 90 días para evitar negocios paralelos", "los
+  agentes cobran por dejar pasar", cualquier afirmación sobre corrupción, sobornos, o
+  motivos internos de una institución — aunque venga de un hilo de Reddit o blog
+- **Fuente única no alcanza.** Si una idea viene de un solo post/hilo sin verificar y
+  toca a una institución, se descarta o se reescribe quitando la acusación — no se
+  publica solo porque "lo dice Reddit"
+- **Por qué:** riesgo legal/reputacional real si la afirmación es falsa, y no aporta al
+  ángulo del producto (intel práctico para moverte en el país, no denuncia política)
+- **Cómo se aplica:**
+  - `intel-gather`: `BLOCKED_KEYWORDS` filtra títulos con "corrupt", "bribe", "payoff",
+    "extortion", "dirty cops" antes de que lleguen a `content_ideas`
+  - `idea-to-queue`: el system prompt de Haiku tiene instrucción explícita de no hacer
+    afirmaciones sobre instituciones, solo observación de calle
+  - Caso real: idea `24cb0db9` (Medellín 2026, afirmaba que la policía rotaba para
+    evitar "negocios paralelos") se descartó del queue el 1 Jul por esta regla
+
 ## Errores Conocidos a Evitar
 
 1. **Figma layoutSizingHorizontal="FILL"**: solo se puede setear DESPUÉS de appendChild a un auto-layout frame
@@ -314,9 +338,14 @@ Día 23 → "Where are you going?" (template 13)
 - `IntelAdReel` (video) tuvo CTR 2.76% vs 17.5% del estático — el formato video no detiene el scroll en IG para esta audiencia
 - Video ad generó 356 video views pero muy pocos clicks — engagement ≠ intent en este contexto
 
-## Estado Actual (25 Jun 2026)
+## Estado Actual (1 Jul 2026)
 
 ### Completado
+- **Cuenta Meta reactivada (1 Jul)**: estaba en `UNSETTLED` desde ~26 Jun, medio de pago nuevo agregado.
+- **intel-gather migrado a Apify Google Search Scraper (1 Jul)**: HN Algolia sin volumen. v17 deployada, 98 ideas nuevas en primera corrida.
+- **Regla "todo es intel de calle" (1 Jul)**: nunca acusar instituciones sin verificar. Aplicada en intel-gather, idea-to-queue y CLAUDE.md.
+- **Julio completo en content_queue (1 Jul)**: 17 posts, 3-31 jul, todos revisados con /humanizalo.
+- **Copy review workflow con Juan Camilo (1 Jul)**: Google Doc compartido, esperando feedback.
 - **Funnel email reforzado (25 Jun)**: PS de venta en emails 10/11/12 + 2 nuevos emails (Day 10 follow-up, Day 21 pitch final). 10 emails, 4 momentos de venta.
 - **IntelAdReel video ad pausado (25 Jun)**: CPL $6.65 vs $1.90 NoDarPapaya. Presupuesto 100% a NoDarPapaya.
 - **34 leads reales en Brevo lista 3** (al 25 Jun). Automation activa y funcionando correctamente.
@@ -431,6 +460,8 @@ Form submit → subscribe v22
 ```
 
 ### Pendiente
+- **Crear assets visuales (imágenes) de los 17 posts de julio** — el copy ya está en el queue, falta generar las imágenes Satori antes de que el cron los publique. No frenar el calendario esperando el review de Juan Camilo.
+- **Esperar feedback de Juan Camilo** sobre el Google Doc de copy review — ajustar posts según sus comentarios antes de publicar si hace falta.
 - **Revisar resultados de la campaña el jueves 6 Jun** — CTR, CPC, gasto real. Pausar ads con CTR < 0.8%.
 - **Transferir ad account al Business Portfolio "Me Gusta"** para poder usar system user token permanente en meta-ads MCP (en lugar del personal user token que expira en ~60 días).
 - **Renovar META_ACCESS_TOKEN en .mcp.json** antes de que expire (~60 días desde 3 Jun = ~2 Ago). Token es el personal user long-lived de Miguel.
@@ -476,9 +507,60 @@ curl -X POST "https://graph.facebook.com/v21.0/1068628786330276/photos" \
 # 3. POST /17841480006391349/media_publish (creation_id=CONTAINER_ID)
 ```
 
+### Jornada 1 Jul 2026 — Recovery de cuenta Meta + migración intel-gather + copy review workflow
+
+**Meta Ads: cuenta suspendida por pago pendiente.**
+- `account_status` en `UNSETTLED` desde ~26 Jun — 5-6 días sin entrega real pese a que la campaña mostraba "ACTIVE"
+- Balance pendiente 137,167 COP. Usuario agregó medio de pago nuevo, cuenta volvió a `ACTIVE`
+- Leads perdidos estimados: ~15-20 durante el bloqueo (último lead real fue 25 Jun)
+
+**Queue de contenido se había vaciado.** 30/30 posts publicados, cron no alcanzó a generar más porque intel-gather llevaba semanas sin traer nada (0 hits silenciosos, nadie lo notó).
+
+**Diagnóstico: HN Algolia sin volumen.** Las 8 queries travel-focused sobre Colombia (nómadas, expat, etc.) daban 0 hits con filtro `points>5` en 6 meses — HN no tiene ese volumen de discusión para temas de nicho.
+
+**Migración de fuente: HN Algolia → Apify Google Search Scraper.**
+- Apify Reddit Scraper directo probado en vivo: bloqueado 403 incluso con proxy residential — Reddit bloquea datacenter IPs agresivamente, Apify no es excepción
+- Google Search Scraper (`apify/google-search-scraper`) rodea el bloqueo buscando `site:reddit.com` — Google sí indexa los hilos aunque Reddit no deje scrapearlos directo
+- 11 queries nuevas, cruzadas con modismos ya usados en el cheat sheet (no dar papaya, qué más, quiubo) para no repetir ángulos
+- Costo real: ~$0.05/corrida sobre $5/mes gratis de Apify — holgado
+- `intel-gather` v17 deployada. Constraint `content_ideas_source_check` alterada para aceptar `'google-search'`
+- Primera corrida: 98 ideas nuevas insertadas
+
+**Regla nueva: "todo es intel de calle" — no acusar instituciones.**
+- Detectada una idea (Medellín 2026) que afirmaba que la policía rotaba cada 90 días "para evitar negocios paralelos" — acusación de corrupción sin verificar, fuente única de Reddit
+- Regla documentada: nunca especular sobre motivos institucionales (policía, migración, gobierno), solo observación de calle verificable
+- Aplicada en 3 capas: `CLAUDE.md` (documentación), `intel-gather` BLOCKED_KEYWORDS (bribe, corrupt cop, extortion...), system prompt de Haiku en `idea-to-queue` (instrucción explícita)
+- El post problemático se descartó del queue
+
+**Corrección de documentación: el trigger `on_idea_approved` SÍ existe.**
+- La decisión #13 de este archivo (27 May) decía que el trigger "nunca existió". Falso — es un trigger Postgres real (`AFTER UPDATE ON content_ideas`) que llama `idea-to-queue` via `pg_net.http_post`
+- Causó una carrera cuando se aprobaron 15 ideas en batch: el trigger procesó todo async antes de que mis llamadas manuales llegaran, y 3 posts cayeron en la misma fecha de publicación (bug de `nextPublishDate()` leyendo estado desviejo)
+- Corregido en `dont-do.md` — nunca asumir que no hay triggers sin correr `SELECT tgname FROM pg_trigger`
+
+**Julio completo: 17 posts en `content_queue` (3-31 jul), 21 ideas curadas y aprobadas del pool de 98.**
+- Primeras 15: mezcla de ángulos (quiubo, CheckMig scam, SIM cards, Cartagena pricing, Islas del Rosario, 20 años expat)
+- Últimas 6: variedad para no saturar (expat life Bogotá, Medellín positivo, visa nómada, Cartagena contra-narrativa, slang Bogotá, ciudades remote-work alternas)
+- Todo el copy generado pasó por revisión `/humanizalo` antes de entrar al queue — encontrados y corregidos: contrastes binarios P15, un em dash, "Full stop." (P36), arco de revelación completo en el post de 20 años (P41+P43), 2 posts sin cierre `megusta.com.co`, 1 typo de gramática
+
+**Workflow nuevo: copy review con Juan Camilo (director creativo, copywriter).**
+- Notion descartado — invitarlo como member cuesta, y el flujo de guest le daba error
+- Decisión: Google Doc con modo Sugerencias (mejor fit que Notion para revisión de copy — track changes real)
+- Doc creado con los 17 posts + espacio de feedback por post, compartido con permiso "Comentador"
+- Pendiente: crear assets visuales de los 17 posts mientras se espera el review de copy, para no frenar el calendario
+
+### Errores conocidos a evitar (nuevo)
+
+27. **Cuenta Meta puede estar "ACTIVE" en apariencia y bloqueada de verdad.** El campo `status` del ad/campaign no refleja el estado real de facturación. Siempre chequear `account_status` y `balance` del ad account (`act_XXX`) cuando el rendimiento cae en seco sin razón aparente.
+
+28. **Fuentes de intel-gather pueden quedar secas en silencio.** `fetched:0` no es un error — el código lo trata como resultado válido y no alerta fuerte. Revisar periódicamente que el volumen de ideas nuevas sea razonable, no solo que la function "corra sin errores".
+
+29. **Aprobar ideas en batch dispara el trigger async en paralelo.** Causa colisiones de fecha en `content_queue` porque `nextPublishDate()` lee el estado de la tabla en el momento de cada llamada. Revisar el queue después de cualquier aprobación masiva.
+
+30. **No asumir que un trigger Postgres "no existe" sin verificarlo en la DB.** Documentación vieja puede quedar desactualizada si alguien agrega un trigger después. Verificar con `pg_trigger` antes de escribir "esto no existe" en CLAUDE.md.
+
 ## Credenciales
 Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
 NO guardar credenciales en este archivo ni en archivos commiteados.
 
 ---
-*Última actualización: 25 Jun 2026*
+*Última actualización: 1 Jul 2026*

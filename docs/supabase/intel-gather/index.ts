@@ -13,19 +13,28 @@ const SUPABASE_DASHBOARD =
   "https://supabase.com/dashboard/project/uocwxwvcrnkfnnoyjzyb/editor";
 const NOTIFICATION_EMAIL = "hola@megusta.com.co";
 
-// Términos de búsqueda en Hacker News via Algolia — TRAVEL-FOCUSED.
-// Las queries genéricas ("colombia", "bogota") traían demasiado amarillismo
-// (cartel, fraude, política). Estas queries son más específicas para viajes/turismo/nómadas.
-// Reddit bloqueado desde IPs de Fly.io (403). Apify trial expirado 2026-05-26.
-const HN_QUERIES = [
-  "colombia digital nomad",
-  "medellin coworking",
-  "bogota remote work",
-  "colombia travel",
-  "cartagena tourism",
-  "colombia expat",
-  "colombia visa nomad",
-  "medellin tourism",
+// Queries via Apify's Google Search Results Scraper (apify/google-search-scraper).
+// HN Algolia se descartó (2026-07-01): las queries travel-focused sobre Colombia
+// no tienen volumen suficiente en HN — 0 hits en las 8 queries con points>5.
+// Reddit directo también se descartó: 403 incluso con proxy residential (Apify
+// Reddit Scraper probado en vivo, bloqueado igual que desde Fly.io/Supabase).
+// Google Search Scraper rodea el bloqueo buscando site:reddit.com — Google sí
+// indexa esos hilos aunque Reddit bloquee el scraping directo.
+// Las últimas 3 cruzan con los modismos ya usados en el cheat sheet / guías
+// (no dar papaya, que más bien o qué, cuánto cuesta, de una) para no repetir
+// ángulos ya cubiertos y detectar modismos faltantes (ej. quiubo).
+const SEARCH_QUERIES = [
+  "colombia digital nomad site:reddit.com",
+  "medellin OR bogota OR cartagena expat site:reddit.com",
+  "colombia travel scam OR ripoff site:reddit.com",
+  "colombia expat forum",
+  "medellin travel guide 2026",
+  "bogota safety tips foreigners",
+  "cartagena tourist trap OR overcharge",
+  "colombia sim card airport OR taxi tips",
+  '"no dar papaya" reddit OR blog meaning',
+  "colombian slang foreigners should know site:reddit.com",
+  '"que mas" OR "quiubo" colombia greeting explained',
 ];
 
 // Filtro de exclusión — descarta títulos con noticias amarillistas / no-travel.
@@ -49,6 +58,14 @@ const BLOCKED_KEYWORDS = [
   "guerrilla",
   "farc",
   "eln",
+  // Institucional — nunca acusar/especular sobre policía, migración, gobierno (1 Jul 2026)
+  "police corruption",
+  "corrupt cop",
+  "corrupt police",
+  "bribe",
+  "payoff",
+  "extortion",
+  "dirty cops",
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -68,8 +85,7 @@ interface InsertResult {
 // ─── validateEnv ─────────────────────────────────────────────────────────────
 
 function validateEnv(): void {
-  // No necesitamos APIFY_TOKEN — usamos HN Algolia API (pública, sin auth)
-  const required = ["BREVO_API_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
+  const required = ["BREVO_API_KEY", "SUPABASE_SERVICE_ROLE_KEY", "APIFY_TOKEN"];
   for (const varName of required) {
     if (!Deno.env.get(varName)) {
       throw new Error(`Missing env: ${varName}`);
@@ -77,59 +93,58 @@ function validateEnv(): void {
   }
 }
 
-// ─── fetchHNPosts ─────────────────────────────────────────────────────────────
+// ─── fetchGoogleSearchResults ───────────────────────────────────────────────
 //
-// Usa la API de búsqueda de Hacker News (Algolia).
-// Endpoint: https://hn.algolia.com/api/v1/search
-// Público, sin API key, funciona desde IPs de datacenter.
-// Reddit bloqueaba con 403 desde Fly.io — por eso se migró a HN (2026-05-26).
+// Usa apify/google-search-scraper via el endpoint run-sync-get-dataset-items,
+// que corre el actor y devuelve el dataset en una sola llamada (sin polling).
+// Todas las queries van en un solo run (separadas por \n) — un solo
+// apify-actor-start charge en vez de uno por query.
 
-async function fetchHNPosts(): Promise<ContentPost[]> {
+async function fetchGoogleSearchResults(apifyToken: string): Promise<ContentPost[]> {
+  const url =
+    `https://api.apify.com/v2/acts/apify~google-search-scraper/run-sync-get-dataset-items` +
+    `?token=${apifyToken}`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      queries: SEARCH_QUERIES.join("\n"),
+      maxPagesPerQuery: 1,
+      resultsPerPage: 10,
+      countryCode: "us",
+      languageCode: "en",
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Apify Google Search Scraper failed: ${res.status} ${errText}`);
+  }
+
+  const items: Array<Record<string, unknown>> = await res.json();
   const allPosts: ContentPost[] = [];
-  const seenIds = new Set<string>();
+  const seenUrls = new Set<string>();
 
-  for (const query of HN_QUERIES) {
-    try {
-      // Stories con al menos 5 puntos, últimos 6 meses
-      const sixMonthsAgo = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 180;
-      const url =
-        `https://hn.algolia.com/api/v1/search` +
-        `?query=${encodeURIComponent(query)}` +
-        `&tags=story` +
-        `&hitsPerPage=20` +
-        `&numericFilters=points>5,created_at_i>${sixMonthsAgo}`;
+  for (const item of items) {
+    const term = String((item.searchQuery as Record<string, unknown> | undefined)?.term ?? "?");
+    const results = (item.organicResults as Array<Record<string, unknown>> | undefined) ?? [];
 
-      const res = await fetch(url, {
-        headers: { "User-Agent": "megusta-colombia-intel/1.0" },
+    results.forEach((r, idx) => {
+      const resultUrl = String(r.url ?? "");
+      const title = String(r.title ?? "Sin título");
+      if (!resultUrl || seenUrls.has(resultUrl)) return;
+      seenUrls.add(resultUrl);
+
+      allPosts.push({
+        title,
+        url: resultUrl,
+        // Sin concepto de "points" como en HN/Reddit — usamos la posición
+        // en resultados de Google como proxy de relevancia (1er lugar = 10).
+        score: Math.max(1, 10 - idx),
+        origin: `Google: ${term}`,
       });
-
-      if (!res.ok) {
-        console.warn(`HN search for "${query}" returned ${res.status}`);
-        continue;
-      }
-
-      const json = await res.json();
-      const hits: Array<Record<string, unknown>> = json.hits ?? [];
-
-      for (const hit of hits) {
-        const id = String(hit.objectID ?? "");
-        if (!id || seenIds.has(id)) continue;
-        seenIds.add(id);
-
-        // URL: preferir el link externo, fallback al thread de HN
-        const externalUrl = hit.url as string | undefined;
-        const hnUrl = `https://news.ycombinator.com/item?id=${id}`;
-
-        allPosts.push({
-          title: String(hit.title ?? "Sin título"),
-          url: externalUrl || hnUrl,
-          score: Number(hit.points ?? 0),
-          origin: `HN: ${query}`,
-        });
-      }
-    } catch (err) {
-      console.warn(`Error fetching HN for "${query}":`, err);
-    }
+    });
   }
 
   return allPosts;
@@ -164,9 +179,7 @@ async function insertIdeas(
     return BLOCKED_KEYWORDS.some((kw) => lower.includes(kw));
   };
 
-  // Score mínimo 5 (HN tiene scores más bajos que Reddit)
   const filtered = posts
-    .filter((p) => p.score >= 5)
     .filter((p) => !existingUrls.has(p.url))
     .filter((p) => !isBlocked(p.title));
 
@@ -175,7 +188,7 @@ async function insertIdeas(
   }
 
   const rows = filtered.map((post) => ({
-    source: "hackernews",
+    source: "google-search",
     origin: post.origin,
     title: post.title.slice(0, 500),
     url: post.url,
@@ -215,7 +228,7 @@ async function sendSuccessNotification(
 ): Promise<void> {
   const subject =
     result.inserted === 0
-      ? `☕ 0 ideas nuevas — ${fetched} posts revisados sin novedades`
+      ? `☕ 0 ideas nuevas — ${fetched} resultados revisados sin novedades`
       : `☕ ${result.inserted} ideas nuevas para Me Gusta Colombia`;
 
   const titlesHtml =
@@ -232,9 +245,8 @@ async function sendSuccessNotification(
       subject,
       htmlContent: `
         <h2>${result.inserted} ideas nuevas listas para revisar</h2>
-        <p>Fuente: Hacker News Algolia API (${HN_QUERIES.join(", ")})</p>
-        <p>Posts revisados: ${fetched} | Insertados: ${result.inserted}</p>
-        <p><strong>Nota:</strong> "colombia" matchea también British Columbia — curar en dashboard.</p>
+        <p>Fuente: Google Search Scraper (Apify) — ${SEARCH_QUERIES.length} queries</p>
+        <p>Resultados revisados: ${fetched} | Insertados: ${result.inserted}</p>
         <h3>Top 5 títulos:</h3>
         ${titlesHtml}
         <p><a href="${SUPABASE_DASHBOARD}">→ Abrir dashboard de Supabase</a></p>
@@ -271,8 +283,9 @@ Deno.serve(async (req: Request) => {
     validateEnv();
     const brevoKey = Deno.env.get("BREVO_API_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const apifyToken = Deno.env.get("APIFY_TOKEN")!;
 
-    const posts = await fetchHNPosts();
+    const posts = await fetchGoogleSearchResults(apifyToken);
     const existingUrls = await getExistingUrls(serviceKey);
     const result = await insertIdeas(posts, existingUrls, serviceKey);
 
