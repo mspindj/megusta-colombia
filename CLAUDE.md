@@ -459,9 +459,52 @@ Form submit → subscribe v22
   └── Meta CAPI → Lead event (email SHA-256, fire-and-forget)
 ```
 
+### Jornada 3 Jul 2026 (tarde) — Diagnóstico funnel: 0 ventas Gumroad pese a leads
+
+**Miguel reportó leads llegando pero 0 compras en Gumroad.** Diagnóstico con datos reales de Brevo API (`/v3/smtp/statistics/events`), no asunciones:
+
+- 50 leads en lista 3 (16 nuevos desde el 25 Jun, coherente con Meta: 16 leads del 1-3 Jul post-reactivación de cuenta, CPL ~$1.85 USD)
+- Deliverability y opens normales (25-60% open rate según el email)
+- **En los 4 emails de venta (día 8, 10, 19, 21) combinados: 53 entregados, 1 solo click en 4 semanas** — y ese click fue a la landing page, no a Gumroad. Cero clicks confirmados llegando a Gumroad desde cualquier pitch.
+
+**Causa raíz encontrada revisando el HTML real de los templates (Brevo API, no la UI):** en los emails de día 8, 10 y 21, el botón dorado PRINCIPAL (el más visible, `background-color:#d4a843`, texto "Get Your City's Guide — $17" / "Get the guide — $17") apuntaba a `megusta.com.co/#cities` (la landing page) en vez de a Gumroad directo. Solo el botón secundario (outline, menos visible) iba a Gumroad — y ni siquiera al producto específico, solo al storefront genérico en vez de `/l/explorer-bundle`. Estábamos mandando a la gente con mayor intención de compra de vuelta a la landing, agregando fricción justo en el peor momento. El template de día 19 ("What a week actually costs") no tenía este bug — su botón principal ya iba directo a Gumroad.
+
+**Fix identificado y enviado a Miguel para aplicar manualmente** (ver limitación de API abajo): swap de destinos en los 3 templates —
+- Botón principal "$17" → `https://megustacomco.gumroad.com` (storefront, antes iba a la landing)
+- Botón secundario "$37 bundle" → `https://megustacomco.gumroad.com/l/explorer-bundle` (producto específico, antes iba al storefront genérico)
+
+**Bono — mismo hallazgo de framing amarillista que ya se había corregido en el hero (8 Jun, regla #23):** el copy del template de día 8 abre con "It's midnight... someone's grabbing your bag" — el mismo frame de miedo/scam que se descartó para la landing. Pendiente de reescribir con el frame insider/status, no se tocó esta jornada (prioridad fue el bug de routing).
+
+**Links reales de Gumroad** (extraídos de `src/`, útiles para cualquier corrección futura de copy/emails):
+- `https://megustacomco.gumroad.com/l/bogota72hours` ($17)
+- `https://megustacomco.gumroad.com/l/medellin-survival-vault` ($17)
+- `https://megustacomco.gumroad.com/l/cartagena-survival-vault` ($17)
+- `https://megustacomco.gumroad.com/l/explorer-bundle` ($37, las 3 ciudades)
+- `https://megustacomco.gumroad.com/l/colombia-arrival-cheat-sheet` ($0, lead magnet)
+
+### Jornada 3 Jul 2026 — Copy review de Juan Camilo aplicado
+
+**Juan Camilo revisó los 17 posts en el Google Doc.** Se compararon sus 17 posts pegados contra el estado real de `content_queue`/`content_ideas` y se aplicaron 11 correcciones reales (typos, gramática, 2 sets de hashtags reescritos, 3 CTAs `megusta.com.co` que faltaban):
+
+- Post 1 (aecd38b2): "Rappi guy" → "delivery guy"
+- Post 2 (00cf27d5): "instant" → "instantly"
+- Post 3 (897a6de1): coma agregada ("7pm, in the other")
+- Post 5 (20b775b8): hashtags reescritos (10 tags nuevos, quitó #CartagenaBocagrande/#ColombiaReal, agregó #IslasDelRosario/#TravelTips/#BudgetTravel)
+- Post 6 (01488d45): CTA `megusta.com.co` agregado (faltaba en `content_queue` Y `content_ideas` — el fix de la jornada anterior no había tomado en este post)
+- Post 7 (dbb4351f): "ATM in El Centro" → "at El Centro"; "Cartagena operates" → "operate" (concordancia)
+- Post 11 (081e9817): "That's papaya" → "That's dar papaya"; arregló una cláusula rota ("aren't paranoid... because they're paranoid" → tautología sin sentido, corregido a "aren't paranoid about crime. They're aware...")
+- Post 13 (83c2838c): "Santa Marta if you want beach" → "a beach"
+- Post 14 (a16441bc): "working remote" → "remotely"; CTA `megusta.com.co` agregado en `content_queue` (content_ideas ya lo tenía)
+- Post 16 (f962b4aa): "cable car is 2,850" → "cable car up is 2,850"; CTA `megusta.com.co` agregado en `content_queue`
+- Post 17 (5d3e89e0): hashtags reescritos (agregó #ColombianSlang/#COLtravel/#ColombiaLife/#BogotaExpat, quitó #BogotaCafe/#BogotaTravel/#ColombiaLanguage)
+
+**Hallazgo — bug del fix de CTA de la jornada anterior:** los posts 14 y 16 tenían el CTA agregado en `content_ideas.generated_copy` pero NO en `content_queue.caption` (la tabla que realmente publica el cron). El post 6 no tenía el CTA en ninguna de las dos tablas. Conclusión: cuando se corrige copy post-generación, **hay que verificar `content_queue` explícitamente**, no asumir que se propagó desde `content_ideas`.
+
+**Sin aplicar — necesita tu confirmación:** en el texto que pegaste, 7 de los 17 posts (07-13, 07-15, 07-17, 07-19, 07-20, 07-24, 07-27) aparecen SIN hashtags al final, mientras que en 3 de ellos (07-15, 07-17, 07-19) tampoco hay ningún otro cambio de copy. Esto no tiene el patrón de una edición real de Juan Camilo (él sí reescribió hashtags completos en los posts 5 y 17, no los borró en seco) — parece más un artefacto de copiar/pegar desde el Google Doc. **Dejé los hashtags existentes intactos en esos 7 posts** en vez de borrarlos, para no perder alcance por un posible error de pegado. Confírmame con Juan Camilo si de verdad quiere quitar hashtags de esos posts específicos antes de que yo los toque.
+
 ### Pendiente
-- **Crear assets visuales (imágenes) de los 17 posts de julio** — el copy ya está en el queue, falta generar las imágenes Satori antes de que el cron los publique. No frenar el calendario esperando el review de Juan Camilo.
-- **Esperar feedback de Juan Camilo** sobre el Google Doc de copy review — ajustar posts según sus comentarios antes de publicar si hace falta.
+- **Confirmar con Juan Camilo si los 7 posts sin hashtags en su pegado (07-13/15/17/19/20/24/27) son una edición real o un artefacto de copy-paste** — ver jornada 3 Jul arriba.
+- **Crear assets visuales (imágenes) de los 17 posts de julio** — el copy ya está en el queue, falta generar las imágenes Satori antes de que el cron los publique.
 - **Revisar resultados de la campaña el jueves 6 Jun** — CTR, CPC, gasto real. Pausar ads con CTR < 0.8%.
 - **Transferir ad account al Business Portfolio "Me Gusta"** para poder usar system user token permanente en meta-ads MCP (en lugar del personal user token que expira en ~60 días).
 - **Renovar META_ACCESS_TOKEN en .mcp.json** antes de que expire (~60 días desde 3 Jun = ~2 Ago). Token es el personal user long-lived de Miguel.
@@ -558,9 +601,13 @@ curl -X POST "https://graph.facebook.com/v21.0/1068628786330276/photos" \
 
 30. **No asumir que un trigger Postgres "no existe" sin verificarlo en la DB.** Documentación vieja puede quedar desactualizada si alguien agrega un trigger después. Verificar con `pg_trigger` antes de escribir "esto no existe" en CLAUDE.md.
 
+31. **Copy pegado desde Google Docs en el chat puede perder hashtags al copiar (modo Sugerencias/Comentarios).** Detectado 3 Jul revisando el feedback de Juan Camilo: 7 de 17 posts aparecían sin hashtags en el texto pegado, sin ningún otro cambio de copy que lo justificara — resultó ser artefacto de copy-paste, no una edición real. **Regla:** antes de aplicar cualquier cambio de hashtags basado en texto pegado, verificar el conteo real en `content_queue` vía SQL (`length(caption) - length(replace(caption,'#',''))`) en vez de asumir que la ausencia en el pegado es intencional. Mantener 9-15 hashtags por post en toda generación futura (Haiku vía `idea-to-queue` ya apunta a ese rango — no bajar de ahí al aplicar ediciones manuales).
+
+32. **Brevo Automation step templates NO se pueden editar vía API.** `GET /v3/smtp/templates/{id}` funciona perfecto (devuelve htmlContent completo) para cualquier template, incluidos los de pasos de Automation (`name: "Automation #1_step_#N"`). Pero `PUT /v3/smtp/templates/{id}` devuelve 404 `document_not_found` en esos mismos IDs, incluso con body mínimo — la API los trata como de solo lectura. Los templates standalone (no ligados a una Automation) sí se pueden editar vía PUT normalmente. Para cambios de copy/links en emails de una Automation: diagnosticar y preparar el fix exacto vía API (más rápido, más preciso), pero la aplicación final requiere pegarlo manualmente en el editor visual de Brevo.
+
 ## Credenciales
 Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
 NO guardar credenciales en este archivo ni en archivos commiteados.
 
 ---
-*Última actualización: 1 Jul 2026*
+*Última actualización: 3 Jul 2026*
