@@ -502,7 +502,74 @@ Form submit → subscribe v22
 
 **Sin aplicar — necesita tu confirmación:** en el texto que pegaste, 7 de los 17 posts (07-13, 07-15, 07-17, 07-19, 07-20, 07-24, 07-27) aparecen SIN hashtags al final, mientras que en 3 de ellos (07-15, 07-17, 07-19) tampoco hay ningún otro cambio de copy. Esto no tiene el patrón de una edición real de Juan Camilo (él sí reescribió hashtags completos en los posts 5 y 17, no los borró en seco) — parece más un artefacto de copiar/pegar desde el Google Doc. **Dejé los hashtags existentes intactos en esos 7 posts** en vez de borrarlos, para no perder alcance por un posible error de pegado. Confírmame con Juan Camilo si de verdad quiere quitar hashtags de esos posts específicos antes de que yo los toque.
 
+### Jornada 7 Jul 2026 — Prototipo de footage real para Reels (reemplazo parcial del mapa vectorial)
+
+**Motivo:** el enfoque 100% mapa vectorial + Ken Burns estaba quedando monótono. Investigación + prototipo para mezclar footage real royalty-free de las 3 ciudades.
+
+**Fuente elegida: Pexels.** Gratis, licencia permite uso comercial sin atribución (solo prohíbe revender el clip sin modificar o implicar que una persona en el video endorsa el producto), API con filtro `orientation=portrait` nativo para vertical. Pixabay queda como respaldo secundario (no verificado su filtro de orientación).
+
+**Truco sin API key (funciona, pero es manual):** `https://www.pexels.com/download/video/{id}/` redirige 302 directo al mp4 real en `videos.pexels.com` sin necesidad de auth. Usado para armar la librería inicial mientras Miguel genera una API key real en pexels.com/api (pendiente, ver abajo).
+
+**Librería curada en `editor-pro-max-main/public/assets/megusta/footage/`** (14 clips, ~191MB total tras normalizar — original bajado pesaba 949MB, algunos clips traían bitrate absurdo como 139 Mbps en 4K):
+- Bogotá: `bogota-drone.mp4` (aérea con niebla), `bogota-carrera7.mp4`, `bogota-plaza-bolivar.mp4`, `bogota-ciclovia.mp4` (gente en bici, domingo), `bogota-centro-cenital.mp4`
+- Medellín: `medellin-cablecar.mp4`, `medellin-comuna13.mp4` (graffiti, colorido), `medellin-sabaneta.mp4`, `medellin-itagui.mp4`
+- Cartagena: `cartagena-street.mp4` (vertical nativo, la mejor calidad de las 3 ciudades), `cartagena-san-diego.mp4`, `cartagena-street-life.mp4`, `cartagena-tuktuk-plaza.mp4`, `cartagena-plaza-restaurant.mp4`
+
+**Normalización aplicada a todos los clips:** `ffmpeg -vf scale=... -an -c:v libx264 -crf 23` — máximo 1920px en el lado largo (no hace falta 4K para un output de 1080x1920), sin audio (se silencia igual en el componente), faststart. Reduce el peso 5-10x sin pérdida visible tras el grading oscuro.
+
+**Componente nuevo: `CityFootageBackground`** en `editor-pro-max-main/src/compositions/ReelComponents.tsx` (junto a `MapBackground`). Mismo tratamiento visual que ya usa la landing (`saturate(0.4) brightness(0.55) contrast(0.9)` + overlay oscuro, default 0.78) para que el corte entre mapa vectorial y footage real no se sienta como un salto de estilo. Prop `overlayOpacity` ajustable por escena.
+
+**Composición de prueba: `FootageTest.tsx`** (registrada en Root.tsx, NO toca ningún Reel en producción) — 7 escenas mezclando mapa + footage de las 3 ciudades + CTA. Render de prueba en `out/footage-test.mp4`. Veredicto visual: funciona bien, especialmente Bogotá (drone con niebla) y Cartagena (vertical nativo). Único defecto encontrado: `medellin-cablecar.mp4` tiene un cable cruzando el cuadro en algunos frames — recortar a otro momento del clip antes de usarlo en producción.
+
+**Decisiones de Miguel para producción:**
+1. Footage real como base visual; el mapa vectorial se reserva para momentos donde aporta información real (rutas de taxi, comparación de barrios) — no reemplazo total.
+2. Miguel generó una API key gratis de Pexels (`pexels.com/api`) — guardada en Notion (Credenciales & API Keys, sección propia de Miguel al final de la página). Verificada con una query real contra `api.pexels.com/v1/videos/search`, funciona.
+3. Ampliar la librería ahora (ya hecho arriba, 14 clips) en vez de esperar con solo 3.
+
+**Ajuste de grading (mismo día):** el overlay oscuro inicial (0.78, calcado de `MapBackground`) tapaba demasiado el footage real — Miguel lo señaló al ver el render. Bajado a `overlayOpacity=0.5` por defecto (0.6 en escenas de CTA) y aflojado el filtro CSS de `saturate(0.4) brightness(0.55) contrast(0.9)` a `saturate(0.55) brightness(0.85) contrast(1.0)`. El mapa vectorial (`MapBackground`) no se tocó — sigue con su grading original, solo aplica a `CityFootageBackground`.
+
+### Jornada 7 Jul 2026 — Primer anuncio de video en producción (NoDarPapayaVideoAd)
+
+**Contexto:** Miguel preguntó si valía la pena rotar el creativo actual (`MG_Ad3_NoDarPapaya`, activo desde el 8 jun, ~29 días). Diagnóstico con datos reales de Meta antes de recomendar nada:
+- CTR semana 1 (8-14 jun): 16.3% → semana 2 (15-24 jun): **18.75%** — subiendo, no bajando. Cero señal de fatiga.
+- Frecuencia se mantuvo baja todo el periodo (~1.1-1.5) — Meta seguía encontrando audiencia nueva, no repitiendo a los mismos usuarios.
+- El único hueco real es 25-30 jun (cero delivery), que coincide exactamente con la suspensión de cuenta por pago pendiente.
+- El salto de CPL visto 4-7 jul (~$3.01 vs ~$1.85 anterior) es consistente con el patrón típico de Meta post-reactivación (el algoritmo pierde señal de optimización tras una interrupción de pago) — no con fatiga de creativo.
+- **Conclusión: no reemplazar NoDarPapaya** (sigue siendo el único ganador comprobado), pero sí agregar una **segunda variante en paralelo** ya que llevaba 29 días sin ninguna pieza corriendo junto a ella para comparar — buena práctica de Meta tener 2-3 ads activos por ad set.
+
+**Pieza producida: `NoDarPapayaVideoAd.tsx`** — versión en video del MISMO copy ganador de la imagen estática (`MG_Ad3_NoDarPapaya`: "No dar papaya. Don't make yourself a target... Phone out at night, counting cash in public, expensive watch visible — all dar papaya. Free guide: what to avoid in Bogotá, Medellín, and Cartagena"), NO un mensaje nuevo. La única variable que cambia es el formato (video vs. imagen estática) y el fondo (footage real de las 3 ciudades vs. sin imagen real) — aísla la variable a probar en vez de repetir el error del viejo `IntelAdReel` (que cambiaba mensaje Y formato a la vez, y perdió con CPL $6.65 vs $1.90).
+
+- 17s / 510 frames @ 30fps, voz sola (sin beat, mismo estilo que `IntelAdReel`)
+- Voiceover generado con Gemini TTS (`scripts/generate-tts.py`, voz Orus) → `voice-nodarpapaya-v2.wav`
+- 4 escenas: hook (Bogotá drone) → lista de "dar papaya" (Cartagena calle) → oferta (Medellín Comuna 13) → CTA (Bogotá drone, overlay más oscuro para legibilidad del botón)
+- Render final en `editor-pro-max-main/out/nodarpapaya-video-ad.mp4`
+
+**Publicado en Meta (7 Jul, con aprobación explícita de Miguel):**
+- Video subido a la cuenta vía `/act_12667938/advideos` → `video_id: 1158614787339867`
+- Creative creado vía Graph API directo (el MCP `create_ad_creative` dio "Invalid parameter" — construir el `object_story_spec.video_data` a mano funcionó, mismo patrón que ya se documentó para imágenes: el MCP no siempre alcanza, Graph API directo sí) → `creative_id: 1285003180151302`
+- Ad creado en el ad set `52512402834097` (mismo de NoDarPapaya) → `MG_LeadOpt_NoDarPapayaVideo`, id `52537448401297`, activado
+- Ahora corren 2 variantes en paralelo en el mismo ad set: `MG_LeadOpt_NoDarPapaya` (imagen, ganador histórico) y `MG_LeadOpt_NoDarPapayaVideo` (video, footage real)
+
+### Jornada 9 Jul 2026 — Pinterest rechazado + fix de leads duplicados
+
+**Pinterest: acceso Trial de la app existente (App ID 1558821) rechazado.** Diagnóstico:
+- El acceso Trial en sí requiere aprobación con demo (no es automático como decía la documentación previa) — mismo criterio que Standard: mostrar flujo OAuth completo + integración real, no wireframes.
+- La app rechazada quedó bloqueada: sin App Secret disponible, sin reenvío posible ("hay que crear la solicitud" — confirmado por Miguel). Hasta el token de solo-lectura ("Generar token") devolvió error `"Your application consumer type is not supported"` — bloqueo total, no solo de escritura.
+- Causa más probable: nunca se completó/grabó un flujo OAuth real antes de la solicitud original — el campo Redirect URI estaba vacío, lo cual hace imposible que existiera un demo real.
+- **Decisión de Miguel: crear app nueva y reintentar**, esta vez en el orden correcto — configurar Redirect URI primero, hacer el flujo OAuth real, grabarlo, y recién ahí enviar la solicitud. Quedó pendiente que Miguel cree la app y comparta el nuevo App ID/Secret para retomar.
+- Nota de costo-beneficio planteada: Pinterest es canal secundario con proceso de aprobación documentado como opaco (rechazos repetidos sin motivo en la comunidad de developers, incluso con apps nuevas bien configuradas) — Meta+IG sigue siendo el canal probado.
+
+**Bug real encontrado y corregido: leads duplicados en el correo de notificación.** Miguel reportó que los correos de "Nuevo lead" llegaban dos veces. Diagnóstico con datos reales de Brevo (`campaign_analytics_get_email_event_report`), no asunción:
+- De ~19 leads en los últimos 14 días, solo 2 tenían notificación duplicada (`Mastainferno89@gmail.com` con 12s de diferencia, `campbellmatt772@gmail.com` con 14min) — no es un bug sistemático que duplique TODO, es intermitente.
+- Causa raíz en `docs/supabase/subscribe/index.ts`: el código detectaba "ya suscrito" chequeando si Brevo devolvía el código de error `duplicate_parameter` en el POST a `/v3/contacts`. Pero el request usa `updateEnabled: true` — y con ese flag, Brevo NUNCA devuelve `duplicate_parameter` para un contacto existente, hace merge/update y devuelve éxito (201) igual que si fuera nuevo. Esa rama de detección de duplicados era código muerto desde que se escribió.
+- Efecto real: cualquier visitante que se suscribe dos veces (ej. llena el form del hero, después el de la sticky bar sin darse cuenta que ya se había registrado) dispara una segunda notificación Y un segundo evento Lead de Meta CAPI — contaminando también el conteo de Leads que ve Meta Ads Manager con conversiones repetidas del mismo contacto.
+- **Fix aplicado (v26 desplegada):** nueva función `contactAlreadyInList()` que hace un `GET /v3/contacts/{email}` ANTES del POST, chequeando si el contacto ya está en `listIds` de la lista 3 — ese es el chequeo real de duplicado, independiente del comportamiento de `updateEnabled`. Verificado en vivo: email existente (`avres03@gmail.com`) no generó nueva notificación; email nuevo de prueba sí generó una sola.
+
 ### Pendiente
+- **Cuando Miguel cree la nueva app de Pinterest:** retomar con el App ID/Secret nuevo, configurar Redirect URI primero, grabar el demo real, enviar solicitud de Trial.
+- **Revisar en 3-5 días si `MG_LeadOpt_NoDarPapayaVideo` compite con la imagen estática** — comparar CPL/CTR antes de decidir si escalar el formato video a otras ciudades/ángulos.
+- **Recortar `medellin-cablecar.mp4`** para evitar el frame con el cable cruzando el cuadro, o reemplazarlo por otro clip.
+- **Decidir el primer Reel de producción que use footage real** (candidato: uno de los posts de julio sobre Comuna 13, Ciclovía, o el walled city de Cartagena — todos tienen clip fuerte ya en la librería).
 - **Confirmar con Juan Camilo si los 7 posts sin hashtags en su pegado (07-13/15/17/19/20/24/27) son una edición real o un artefacto de copy-paste** — ver jornada 3 Jul arriba.
 - **Crear assets visuales (imágenes) de los 17 posts de julio** — el copy ya está en el queue, falta generar las imágenes Satori antes de que el cron los publique.
 - **Revisar resultados de la campaña el jueves 6 Jun** — CTR, CPC, gasto real. Pausar ads con CTR < 0.8%.
@@ -605,9 +672,15 @@ curl -X POST "https://graph.facebook.com/v21.0/1068628786330276/photos" \
 
 32. **Brevo Automation step templates NO se pueden editar vía API.** `GET /v3/smtp/templates/{id}` funciona perfecto (devuelve htmlContent completo) para cualquier template, incluidos los de pasos de Automation (`name: "Automation #1_step_#N"`). Pero `PUT /v3/smtp/templates/{id}` devuelve 404 `document_not_found` en esos mismos IDs, incluso con body mínimo — la API los trata como de solo lectura. Los templates standalone (no ligados a una Automation) sí se pueden editar vía PUT normalmente. Para cambios de copy/links en emails de una Automation: diagnosticar y preparar el fix exacto vía API (más rápido, más preciso), pero la aplicación final requiere pegarlo manualmente en el editor visual de Brevo.
 
+33. **El MCP `meta-ads` no sirve para publicar creatives de video.** `create_ad_creative` con `video_id` da "Invalid parameter" sin más detalle — probablemente porque el video necesita `object_story_spec.video_data` con thumbnail (`image_url`/`image_hash`) y el tool no expone ese campo. Tampoco hay tool de subida de video (`upload_creative_asset` solo referencia assets ya alojados, no sube bytes). Flujo que sí funciona, todo por Graph API directo con el `META_ACCESS_TOKEN` de `.mcp.json`: (1) `POST /act_{id}/advideos` multipart con el archivo → `video_id`, (2) poll `GET /{video_id}?fields=status` hasta `video_status:"ready"`, (3) `GET /{video_id}?fields=picture,thumbnails` para sacar un thumbnail auto-generado, (4) `POST /act_{id}/adcreatives` con `object_story_spec` armado a mano (page_id + video_data con video_id/title/message/image_url/call_to_action), (5) `POST /act_{id}/ads` con `creative={"creative_id":...}` y `adset_id`. Mismo patrón que ya estaba documentado para imágenes (error de mayo: "Meta no acepta image_url en link_data, hay que subir a /adimages") — el MCP cubre lectura/analytics bien, pero para publicar creatives nuevos casi siempre hay que caer a Graph API crudo.
+
+34. **`Brevo POST /v3/contacts` con `updateEnabled: true` NUNCA devuelve `duplicate_parameter`.** Con ese flag, un contacto existente se actualiza/mergea y responde 201 (éxito) en vez del error de duplicado. Cualquier lógica que dependa de ese código de error para detectar "ya suscrito" es código muerto. Para detectar duplicados reales con `updateEnabled: true`, hacer `GET /v3/contacts/{email}` ANTES del POST y chequear `listIds` — no confiar en el código de respuesta del POST.
+
+35. **Pinterest Trial access también requiere demo de OAuth (no es automático).** La documentación vieja de este proyecto decía que solo Standard pedía video demo — falso, o cambió: Trial rechazado da el mismo criterio (flujo OAuth completo, integración real). Una app rechazada queda bloqueada por completo (ni siquiera tokens de solo-lectura funcionan: `"Your application consumer type is not supported"`) y NO se puede reenviar — hay que crear una app nueva. Configurar el Redirect URI ANTES de intentar cualquier flujo OAuth, o no habrá manera de completar/grabar un demo real.
+
 ## Credenciales
 Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
 NO guardar credenciales en este archivo ni en archivos commiteados.
 
 ---
-*Última actualización: 3 Jul 2026*
+*Última actualización: 9 Jul 2026*

@@ -102,6 +102,25 @@ async function sendLeadNotification(
   }
 }
 
+async function contactAlreadyInList(
+  email: string,
+  brevoApiKey: string,
+  listId: number
+): Promise<boolean> {
+  const res = await fetch(
+    `https://api.brevo.com/v3/contacts/${encodeURIComponent(email)}`,
+    { headers: { "accept": "application/json", "api-key": brevoApiKey } }
+  );
+  if (res.status === 404) return false;
+  if (!res.ok) {
+    console.error("Brevo contact lookup failed:", res.status, await res.text());
+    return false; // fail open — treat as new lead rather than silently drop it
+  }
+  const data = await res.json();
+  const listIds: number[] = data.listIds || [];
+  return listIds.includes(listId);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -134,6 +153,14 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Checked BEFORE the upsert below — with updateEnabled:true, Brevo always
+    // returns success (merge/update) for an existing contact, it never returns
+    // duplicate_parameter. Relying on that error code to detect repeat
+    // submissions was silently dead code and re-notified/re-fired CAPI on
+    // every resubmit (e.g. the same visitor submitting both the hero form and
+    // the sticky mobile bar). This pre-check is the real duplicate guard.
+    const isDuplicate = await contactAlreadyInList(email, BREVO_API_KEY, 3);
+
     const brevoResponse = await fetch("https://api.brevo.com/v3/contacts", {
       method: "POST",
       headers: {
@@ -149,22 +176,17 @@ Deno.serve(async (req: Request) => {
     });
 
     const isSuccess = brevoResponse.status === 204 || brevoResponse.ok;
-    let isDuplicate = false;
 
     if (!isSuccess) {
       const brevoData = await brevoResponse.json();
-      if (brevoData.code === "duplicate_parameter") {
-        isDuplicate = true;
-      } else {
-        console.error("Brevo API error:", JSON.stringify(brevoData));
-        return new Response(
-          JSON.stringify({ error: brevoData.message || "Subscription failed" }),
-          {
-            status: brevoResponse.status,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
+      console.error("Brevo API error:", JSON.stringify(brevoData));
+      return new Response(
+        JSON.stringify({ error: brevoData.message || "Subscription failed" }),
+        {
+          status: brevoResponse.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     const sourceUrl = req.headers.get("referer") || "https://megusta.com.co";
