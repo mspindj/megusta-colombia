@@ -565,8 +565,22 @@ Form submit → subscribe v22
 - Efecto real: cualquier visitante que se suscribe dos veces (ej. llena el form del hero, después el de la sticky bar sin darse cuenta que ya se había registrado) dispara una segunda notificación Y un segundo evento Lead de Meta CAPI — contaminando también el conteo de Leads que ve Meta Ads Manager con conversiones repetidas del mismo contacto.
 - **Fix aplicado (v26 desplegada):** nueva función `contactAlreadyInList()` que hace un `GET /v3/contacts/{email}` ANTES del POST, chequeando si el contacto ya está en `listIds` de la lista 3 — ese es el chequeo real de duplicado, independiente del comportamiento de `updateEnabled`. Verificado en vivo: email existente (`avres03@gmail.com`) no generó nueva notificación; email nuevo de prueba sí generó una sola.
 
+### Jornada 11 Jul 2026 — Chequeo de pauta + fix completo del Pixel duplicado
+
+**Comparativo NoDarPapaya (imagen) vs NoDarPapayaVideo, 7-11 jul:** imagen con CTR 15.26%/CPL ~$4.08, video con CTR 2.96%/CPL ~$3.58 pero recibiendo más presupuesto de Meta (video views altos). El video no repite el fracaso del viejo `IntelAdReel` ($6.65 CPL) — va a la par o mejor. Se deja corriendo para seguir comparando.
+
+**Encontrado al revisar los números: brecha de leads Meta vs Brevo creció a 75%** (8 leads reportados por Meta vs solo 2 contactos nuevos reales en Brevo lista 3, mismo periodo). Causa: el fix del 9 jul corrigió que Brevo/CAPI no se duplicaran en el backend, pero el Pixel del navegador seguía disparando `fbq('track','Lead')` en cada respuesta `success:true` — incluyendo resubmits de un email ya suscrito, ya que la función seguía devolviendo éxito para no romper la UX. Meta contaba esos resubmits como leads nuevos, inflando el conteo y el CPL reportado.
+
+**Fix completo aplicado y desplegado:**
+- `subscribe` (v27) y `taxi-subscribe` (v8) ahora devuelven `isDuplicate` en el JSON de respuesta
+- `taxi-subscribe` tenía el mismo bug de fondo (`updateEnabled:true` nunca devuelve `duplicate_parameter`) — no se había tocado en el fix del 9 jul, corregido ahora con el mismo patrón
+- Frontend (`page.tsx` + `EmailCaptureModal.tsx`): el Pixel de Meta (`fbq('track','Lead')`) solo se dispara cuando `isDuplicate` es `false`
+- Verificado en vivo con curl: email existente → `isDuplicate:true`; email nuevo → `isDuplicate:false`; mismo email dos veces → segunda vez `isDuplicate:true`
+- Commit `289f15b`, deploy automático de Vercel en camino tras el push
+
 ### Pendiente
 - **Cuando Miguel cree la nueva app de Pinterest:** retomar con el App ID/Secret nuevo, configurar Redirect URI primero, grabar el demo real, enviar solicitud de Trial.
+- **Revisar en unos días si el conteo de leads en Meta Ads Manager ahora coincide mejor con los contactos reales de Brevo** — confirmar que el fix del Pixel realmente cerró la brecha del 75%.
 - **Revisar en 3-5 días si `MG_LeadOpt_NoDarPapayaVideo` compite con la imagen estática** — comparar CPL/CTR antes de decidir si escalar el formato video a otras ciudades/ángulos.
 - **Recortar `medellin-cablecar.mp4`** para evitar el frame con el cable cruzando el cuadro, o reemplazarlo por otro clip.
 - **Decidir el primer Reel de producción que use footage real** (candidato: uno de los posts de julio sobre Comuna 13, Ciclovía, o el walled city de Cartagena — todos tienen clip fuerte ya en la librería).
@@ -683,4 +697,4 @@ Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
 NO guardar credenciales en este archivo ni en archivos commiteados.
 
 ---
-*Última actualización: 9 Jul 2026*
+*Última actualización: 11 Jul 2026*
