@@ -260,8 +260,10 @@ export default function Home() {
       const data = await response.json();
       if (data.success) {
         setLeadStatus("success");
-        // Fire Meta Pixel Lead event on successful subscription
-        if (typeof window !== "undefined" && typeof (window as Window & { fbq?: (...args: unknown[]) => void }).fbq === "function") {
+        // Fire Meta Pixel Lead event only for genuinely new leads — firing on
+        // every resubmit of an already-subscribed email inflates Meta's lead
+        // count/CPL vs. real new contacts in Brevo.
+        if (!data.isDuplicate && typeof window !== "undefined" && typeof (window as Window & { fbq?: (...args: unknown[]) => void }).fbq === "function") {
           (window as Window & { fbq?: (...args: unknown[]) => void }).fbq!("track", "Lead", { content_name: "Colombia Cheat Sheet", event_id: eventId });
         }
       } else {

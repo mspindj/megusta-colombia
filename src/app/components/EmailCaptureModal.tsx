@@ -62,8 +62,8 @@ export function EmailCaptureModal({
         throw new Error(data.error || "Error al suscribirse");
       }
 
-      // Fire Meta Pixel Lead event
-      if (typeof window.fbq === "function") {
+      // Fire Meta Pixel Lead event — only for genuinely new leads
+      if (!data.isDuplicate && typeof window.fbq === "function") {
         window.fbq("track", "Lead");
       }
 

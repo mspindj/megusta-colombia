@@ -207,7 +207,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, isDuplicate }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
