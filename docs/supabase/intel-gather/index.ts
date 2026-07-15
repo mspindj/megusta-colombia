@@ -99,13 +99,19 @@ function validateEnv(): void {
 // que corre el actor y devuelve el dataset en una sola llamada (sin polling).
 // Todas las queries van en un solo run (separadas por \n) — un solo
 // apify-actor-start charge en vez de uno por query.
+//
+// Respaldo: si la cuenta principal de Apify se quedó sin créditos (402) o el
+// token es inválido/revocado (401/403), reintenta una vez con APIFY_TOKEN_BACKUP
+// (cuenta hola@miguelespinosa.co, compartida con el agente newsletter-kb —
+// agregada 15 Jul 2026). No reintenta en errores 4xx/5xx que fallarían igual
+// con cualquier token (query mal formada, Apify caído, etc).
 
-async function fetchGoogleSearchResults(apifyToken: string): Promise<ContentPost[]> {
+async function runApifyGoogleSearch(apifyToken: string): Promise<Response> {
   const url =
     `https://api.apify.com/v2/acts/apify~google-search-scraper/run-sync-get-dataset-items` +
     `?token=${apifyToken}`;
 
-  const res = await fetch(url, {
+  return await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -116,6 +122,20 @@ async function fetchGoogleSearchResults(apifyToken: string): Promise<ContentPost
       languageCode: "en",
     }),
   });
+}
+
+async function fetchGoogleSearchResults(
+  apifyToken: string,
+  apifyBackupToken?: string
+): Promise<{ posts: ContentPost[]; usedBackup: boolean }> {
+  let res = await runApifyGoogleSearch(apifyToken);
+  let usedBackup = false;
+
+  if (!res.ok && [401, 402, 403].includes(res.status) && apifyBackupToken) {
+    console.warn(`Apify cuenta principal falló (${res.status}) — reintentando con APIFY_TOKEN_BACKUP`);
+    res = await runApifyGoogleSearch(apifyBackupToken);
+    usedBackup = true;
+  }
 
   if (!res.ok) {
     const errText = await res.text();
@@ -147,7 +167,7 @@ async function fetchGoogleSearchResults(apifyToken: string): Promise<ContentPost
     });
   }
 
-  return allPosts;
+  return { posts: allPosts, usedBackup };
 }
 
 // ─── getExistingUrls ──────────────────────────────────────────────────────────
@@ -224,7 +244,8 @@ async function insertIdeas(
 async function sendSuccessNotification(
   result: InsertResult,
   fetched: number,
-  brevoKey: string
+  brevoKey: string,
+  usedBackup: boolean
 ): Promise<void> {
   const subject =
     result.inserted === 0
@@ -236,6 +257,10 @@ async function sendSuccessNotification(
       ? `<ol>${result.titles.map((t) => `<li>${t}</li>`).join("")}</ol>`
       : "<p><em>Ningún título para mostrar.</em></p>";
 
+  const backupWarning = usedBackup
+    ? `<p style="color:#b45309;"><strong>⚠️ La cuenta principal de Apify se quedó sin créditos (o el token falló) — esta corrida usó la cuenta de respaldo (hola@miguelespinosa.co). Revisa/recarga la cuenta principal.</strong></p>`
+    : "";
+
   await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: { "api-key": brevoKey, "Content-Type": "application/json" },
@@ -245,6 +270,7 @@ async function sendSuccessNotification(
       subject,
       htmlContent: `
         <h2>${result.inserted} ideas nuevas listas para revisar</h2>
+        ${backupWarning}
         <p>Fuente: Google Search Scraper (Apify) — ${SEARCH_QUERIES.length} queries</p>
         <p>Resultados revisados: ${fetched} | Insertados: ${result.inserted}</p>
         <h3>Top 5 títulos:</h3>
@@ -284,15 +310,16 @@ Deno.serve(async (req: Request) => {
     const brevoKey = Deno.env.get("BREVO_API_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const apifyToken = Deno.env.get("APIFY_TOKEN")!;
+    const apifyBackupToken = Deno.env.get("APIFY_TOKEN_BACKUP");
 
-    const posts = await fetchGoogleSearchResults(apifyToken);
+    const { posts, usedBackup } = await fetchGoogleSearchResults(apifyToken, apifyBackupToken);
     const existingUrls = await getExistingUrls(serviceKey);
     const result = await insertIdeas(posts, existingUrls, serviceKey);
 
-    await sendSuccessNotification(result, posts.length, brevoKey);
+    await sendSuccessNotification(result, posts.length, brevoKey, usedBackup);
 
     return new Response(
-      JSON.stringify({ ok: true, fetched: posts.length, inserted: result.inserted }),
+      JSON.stringify({ ok: true, fetched: posts.length, inserted: result.inserted, usedBackup }),
       { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
     );
   } catch (err) {

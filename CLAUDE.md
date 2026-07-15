@@ -578,6 +578,16 @@ Form submit → subscribe v22
 - Verificado en vivo con curl: email existente → `isDuplicate:true`; email nuevo → `isDuplicate:false`; mismo email dos veces → segunda vez `isDuplicate:true`
 - Commit `289f15b`, deploy automático de Vercel en camino tras el push
 
+### Jornada 15 Jul 2026 — Respaldo de Apify para intel-gather
+
+**Cuenta de respaldo agregada:** `hola@miguelespinosa.co` (username `maito_tech`), datos en Notion (`🔐 Credenciales & APIs` → Apify, bajo "Maito Tech S.A.S."). Esta misma key ya estaba asignada al agente global `newsletter-kb` — ahora comparte pool de créditos con `intel-gather` de este proyecto. No es un problema para el caso de uso (respaldo, no uso simultáneo pesado), pero queda anotado por si algún día hay que diagnosticar consumo de créditos raro.
+
+- Secret `APIFY_TOKEN_BACKUP` creado en Supabase (Management API, mismo patrón que siempre).
+- `intel-gather` (v19) reescrito con fallback real: si la cuenta principal (`APIFY_TOKEN`) devuelve 401/402/403 (sin créditos, token inválido/revocado), reintenta automáticamente con la de respaldo. NO reintenta en otros códigos de error (400, 5xx) porque esos fallarían igual con cualquier token.
+- Si se usó el respaldo, el correo de notificación de `intel-gather` incluye una advertencia visible pidiendo revisar/recargar la cuenta principal — así no queda corriendo en modo respaldo sin que Miguel se entere.
+- **Verificado en vivo, y no en teoría:** la primera corrida post-deploy activó el fallback de inmediato porque la cuenta principal ya estaba sin crédito (`402 not-enough-usage-to-run-paid-actor`, `$0.003228` restantes del tier gratis de $5/mes). Con el respaldo: 99 resultados, 21 ideas nuevas insertadas. Sin el fix, esta corrida habría fallado por completo.
+- El crédito gratis de Apify se resetea mensualmente — probablemente la cuenta principal vuelva a tener saldo a inicio del próximo ciclo. Si el consumo sigue agotándola seguido, considerar plan pago en la cuenta principal en vez de depender del respaldo cada vez.
+
 ### Pendiente
 - **Cuando Miguel cree la nueva app de Pinterest:** retomar con el App ID/Secret nuevo, configurar Redirect URI primero, grabar el demo real, enviar solicitud de Trial.
 - **Revisar en unos días si el conteo de leads en Meta Ads Manager ahora coincide mejor con los contactos reales de Brevo** — confirmar que el fix del Pixel realmente cerró la brecha del 75%.
@@ -697,4 +707,4 @@ Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
 NO guardar credenciales en este archivo ni en archivos commiteados.
 
 ---
-*Última actualización: 11 Jul 2026*
+*Última actualización: 15 Jul 2026*
