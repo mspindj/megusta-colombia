@@ -588,7 +588,29 @@ Form submit → subscribe v22
 - **Verificado en vivo, y no en teoría:** la primera corrida post-deploy activó el fallback de inmediato porque la cuenta principal ya estaba sin crédito (`402 not-enough-usage-to-run-paid-actor`, `$0.003228` restantes del tier gratis de $5/mes). Con el respaldo: 99 resultados, 21 ideas nuevas insertadas. Sin el fix, esta corrida habría fallado por completo.
 - El crédito gratis de Apify se resetea mensualmente — probablemente la cuenta principal vuelva a tener saldo a inicio del próximo ciclo. Si el consumo sigue agotándola seguido, considerar plan pago en la cuenta principal en vez de depender del respaldo cada vez.
 
+### Jornada 15 Jul 2026 (tarde) — Reformulación con los skills de Hormozi ($100M Leads / Money Models)
+
+**Diagnóstico:** megusta no tenía un money model real, solo una oferta suelta (Attraction → intento de venta única de $17-37, sin upsell, downsell ni continuity). Por el marco de Hormozi eso significa que la adquisición nunca se auto-financia (Client-Financed Acquisition: 30-day gross profit ≥ CAC) — cada lead se paga de bolsillo, apostando a un margen delgado.
+
+**Reformulación completa propuesta (secuencia Attraction → Upsell → Downsell → Continuity):**
+1. Attraction (ya existe): el PDF gratis está bien, pero el primer pitch de venta llega hasta el día 8 del email — deja enfriar la intención de compra.
+2. Upsell (falta): no hay order bump post-compra real (comprar Bogotá y que se ofrezca agregar las otras 2 ciudades con descuento en el momento).
+3. Downsell (falta): nadie que dice no al $17 tiene una oferta más barata (ficha rápida $5, plan de pago, versión reducida).
+4. **Continuity (la palanca más grande, y la única no explorada aún):** `intel-gather` ya produce inteligencia fresca semanal — empaquetarla como membresía recurrente ("Colombia Insider", $5-9/mes) es la reformulación de mayor apalancamiento, pendiente de diseñar.
+
+**Decisión de Miguel: empezar por Leads, no por el money model.** Prioridad: activar Warm Outreach (nunca se ha tocado pese a que Miguel tiene audiencia propia como DJ/Spin) + reforzar Post Content, antes de seguir dependiendo de Paid Ads — coherente con la secuencia de Hormozi (Warm Outreach → Post Content → Cold Outreach → Paid Ads, no los 4 a la vez).
+
+**Hallazgo del audit de Post Content:** el contenido orgánico cumple Hook/Retain/Reward, pero el Give/Ask está desbalanceado — 100% Integrated (link discreto al final del caption), 0% Intermittent (piezas dedicadas solo a pedir). Tampoco se usan Stories para asks directos.
+
+**Primeras 2 piezas Intermittent agregadas al queue** (vía `idea-to-queue`, source `manual`):
+- `idea-84d9adc4-4af` (2026-08-02): ask directo por el PDF gratis — qué incluye exactamente, sin intel nueva, cierre con megusta.com.co. El copy de Haiku salió bien de una, sin corrección.
+- `idea-0d4317f2-dc1` (2026-08-09): ask directo por la guía paga ($17/$37) — **primera publicación orgánica en el feed que promueve el producto pago directamente** (antes solo se empujaba vía email). El copy de Haiku no traía precio ni CTA (el system prompt de Haiku está diseñado para NO sonar a venta, así que resiste escribir asks directos) — reescrito a mano con precio explícito + megusta.com.co. Ojo: mi primer rewrite tenía una raya (—) — la regla de "nada de raya" también aplica a copy que yo mismo escribo, no solo a lo generado por Haiku — corregido.
+
 ### Pendiente
+- **Diseñar el continuity model ("Colombia Insider")** — la reformulación de mayor apalancamiento identificada, aún sin explorar en detalle (pricing, qué incluye, cómo se conecta con `intel-gather`).
+- **Armar el script de Warm Outreach** (Hinge Method: pedir referidos, no vender directo a la red personal de Miguel) — quedó ofrecido, no ejecutado.
+- **Diseñar 2-3 templates de Stories para asks directos** — canal sin usar todavía.
+- **Considerar upsell/downsell en el funnel de compra** (order bump post-$17, oferta barata para quien dice no) — identificado, no implementado.
 - **Cuando Miguel cree la nueva app de Pinterest:** retomar con el App ID/Secret nuevo, configurar Redirect URI primero, grabar el demo real, enviar solicitud de Trial.
 - **Revisar en unos días si el conteo de leads en Meta Ads Manager ahora coincide mejor con los contactos reales de Brevo** — confirmar que el fix del Pixel realmente cerró la brecha del 75%.
 - **Revisar en 3-5 días si `MG_LeadOpt_NoDarPapayaVideo` compite con la imagen estática** — comparar CPL/CTR antes de decidir si escalar el formato video a otras ciudades/ángulos.
@@ -707,4 +729,4 @@ Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
 NO guardar credenciales en este archivo ni en archivos commiteados.
 
 ---
-*Última actualización: 15 Jul 2026*
+*Última actualización: 15 Jul 2026 (tarde)*
