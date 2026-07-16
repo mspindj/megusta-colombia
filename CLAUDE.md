@@ -606,7 +606,31 @@ Form submit → subscribe v22
 - `idea-84d9adc4-4af` (2026-08-02): ask directo por el PDF gratis — qué incluye exactamente, sin intel nueva, cierre con megusta.com.co. El copy de Haiku salió bien de una, sin corrección.
 - `idea-0d4317f2-dc1` (2026-08-09): ask directo por la guía paga ($17/$37) — **primera publicación orgánica en el feed que promueve el producto pago directamente** (antes solo se empujaba vía email). El copy de Haiku no traía precio ni CTA (el system prompt de Haiku está diseñado para NO sonar a venta, así que resiste escribir asks directos) — reescrito a mano con precio explícito + megusta.com.co. Ojo: mi primer rewrite tenía una raya (—) — la regla de "nada de raya" también aplica a copy que yo mismo escribo, no solo a lo generado por Haiku — corregido.
 
+### Jornada 15 Jul 2026 (noche) — Pauta pausada, reconstrucción de estrategia
+
+**Decisión de Miguel: pausar la pauta de Meta mientras se reconstruye la estrategia.** Datos que motivaron la pausa (campaña `MG_Leads_ColombiaVisitors_CheatSheet_Jun26`, 8 jun-15 jul, 5.5 semanas): 1,023,542 COP (~$249 USD) gastados, 94 leads reportados por Meta, 62 suscriptores reales en Brevo, **4 descargas del PDF gratis en Gumroad, 0 ventas pagas**. Solo 6.5% de los leads reales reclamó el lead magnet que ya habían pedido — el cuello de botella está aguas abajo del anuncio (algo entre el opt-in y la descarga), no en targeting. Ningún ajuste de pauta arregla eso.
+
+**Campaña pausada** (no borrada) vía MCP `pause_campaign`, id `52512402757497`. Balance restante en la cuenta: 120,134 COP. Fecha de pausa: 15 Jul 2026.
+
+**Lógica de la decisión:** coherente con la secuencia de Hormozi ya adoptada el 15 Jul (tarde) — Paid Ads va de último en el Core Four, no se financia mientras el money model / conversión aguas abajo no esté probado. Seguir pagando por leads que un funnel roto no retiene es quemar plata en el síntoma equivocado.
+
+### Jornada 15 Jul 2026 (noche, cont.) — Diagnóstico completo del funnel de email: causa raíz encontrada y corregida
+
+**Causa raíz del 6.5% de reclamos de PDF: el botón principal del email 1 estaba muerto desde que se creó, el 16 de junio.** El botón "Download the PDF" usaba `href="{{CHEAT_SHEET_PDF_URL}}"` — una variable de merge que NUNCA se llenó, porque la función `subscribe` solo manda `email`, `listIds`, `updateEnabled` al crear el contacto en Brevo (verificado: `attributes: {}` vacío en contactos reales). Cada persona que abría el email y le daba clic al botón grande no llegaba a ningún lado. El único link que sí funcionaba era un texto chico al pie ("megusta.com.co"), por eso los pocos clicks registrados en Brevo iban ahí y nunca a Gumroad.
+
+**Cómo se encontró el bug real vs. el documentado:** al revisar el automation completo se descubrió que existen DOS generaciones de templates en Brevo para los mismos "pasos" (ej. templates 5/6/7/8 vs. 15/16/17/18/19/20/21/22/26/27, todos nombrados "Automation #1_step_#N"). Cuando se edita/duplica un template dentro del editor de Automation, Brevo crea copias nuevas con otro ID — las correcciones documentadas en jornadas anteriores (25 Jun, 3 Jul) se aplicaron a menudo a la copia standalone vieja ("Lead Magnet — N. ...") que YA NO está conectada al automation real. Para identificar cuál es la secuencia realmente viva, se calculó el delta de días entre el email 1 y cada envío posterior por contacto real — así se mapeó la secuencia de 10 emails que de verdad se envía: día 0(id15) → día 2(id17) → día 5(id18) → día 8(id8) → día 10(id26) → día 12(id19) → día 16(id20) → día 19(id21) → día 21(id27) → día 23(id22).
+
+**Bugs adicionales encontrados en esa secuencia real (todos corregidos, 15 Jul):**
+- **Día 1 (id 15):** botón "Download the PDF" apuntaba a `{{CHEAT_SHEET_PDF_URL}}` (vacío) → corregido a `https://megustacomco.gumroad.com/l/colombia-arrival-cheat-sheet`.
+- **Día 5 (id 18):** botón "Get the Explorer Bundle" apuntaba al storefront genérico en vez de `/l/explorer-bundle` → corregido.
+- **Día 12 (id 19, Laureles/Medellín) y Día 16 (id 20, SIM card):** el fix de "PS de venta" documentado el 25 Jun se aplicó a los templates standalone huérfanos (10, 11), nunca llegó a los que realmente se envían. Los dos emails vivos no tenían NINGÚN botón ni ask de compra — 100% Give, 0% Ask, justo el hueco que el audit de Post Content ya había señalado en la parte orgánica también. Se les agregó un P.S. + botón (día 12 → link directo a `/l/medellin-survival-vault`, día 16 → storefront porque el contenido no es de una sola ciudad).
+
+**Decisión de Miguel (15 Jul, noche):** los botones de $17 en día 8, 10, 19 y 21 siguen apuntando al storefront genérico de Gumroad, no a una ciudad específica — se deja así intencionalmente, porque el funnel no captura en ningún punto qué ciudad visita el lead, así que no hay dato para personalizar esos links. No es un bug, es una limitación de datos conocida y aceptada por ahora.
+
+**Pendiente de verificar:** Miguel ya aplicó a mano los 4 fixes en Brevo (día 1, 5, 12, 16). Falta confirmar en unos días si el % de reclamos del PDF sube desde el 6.5% actual — ese es el indicador real de que el fix funcionó.
+
 ### Pendiente
+- **Confirmar en unos días si sube el % de reclamos del PDF gratis** tras los fixes de email del 15 Jul (noche) — línea base: 4 de 62 (6.5%).
 - **Diseñar el continuity model ("Colombia Insider")** — la reformulación de mayor apalancamiento identificada, aún sin explorar en detalle (pricing, qué incluye, cómo se conecta con `intel-gather`).
 - **Armar el script de Warm Outreach** (Hinge Method: pedir referidos, no vender directo a la red personal de Miguel) — quedó ofrecido, no ejecutado.
 - **Diseñar 2-3 templates de Stories para asks directos** — canal sin usar todavía.
@@ -723,6 +747,8 @@ curl -X POST "https://graph.facebook.com/v21.0/1068628786330276/photos" \
 34. **`Brevo POST /v3/contacts` con `updateEnabled: true` NUNCA devuelve `duplicate_parameter`.** Con ese flag, un contacto existente se actualiza/mergea y responde 201 (éxito) en vez del error de duplicado. Cualquier lógica que dependa de ese código de error para detectar "ya suscrito" es código muerto. Para detectar duplicados reales con `updateEnabled: true`, hacer `GET /v3/contacts/{email}` ANTES del POST y chequear `listIds` — no confiar en el código de respuesta del POST.
 
 35. **Pinterest Trial access también requiere demo de OAuth (no es automático).** La documentación vieja de este proyecto decía que solo Standard pedía video demo — falso, o cambió: Trial rechazado da el mismo criterio (flujo OAuth completo, integración real). Una app rechazada queda bloqueada por completo (ni siquiera tokens de solo-lectura funcionan: `"Your application consumer type is not supported"`) y NO se puede reenviar — hay que crear una app nueva. Configurar el Redirect URI ANTES de intentar cualquier flujo OAuth, o no habrá manera de completar/grabar un demo real.
+
+36. **Brevo duplica templates cuando se editan/duplican dentro del editor de Automation.** Al modificar un paso del automation, Brevo a veces crea una copia nueva con otro ID en vez de editar el original in-place — el template viejo queda huérfano (ya no lo usa el automation) pero sigue existiendo y sigue siendo editable vía API, lo cual engaña: parece que el fix se aplicó porque el PUT/la edición funcionó, pero el automation real sigue mandando la versión vieja sin el fix. Pasó al menos 2 veces (25 Jun, 3 Jul) con los fixes de "PS de venta" y de links de Gumroad. **Cómo verificar cuál template es el que de verdad se envía:** no confiar en el nombre/ID documentado en jornadas anteriores — pedir el reporte de eventos `delivered` de los últimos 60-90 días, agrupar por `templateId` y por contacto, y calcular el delta de días entre el primer email y cada envío posterior. El template con el delta que coincide con el día esperado (ej. "día 8") es el que está vivo. Antes de dar cualquier fix por aplicado, confirmar contra ese mapeo real, no contra el nombre del template.
 
 ## Credenciales
 Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
