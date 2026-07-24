@@ -629,7 +629,25 @@ Form submit → subscribe v22
 
 **Pendiente de verificar:** Miguel ya aplicó a mano los 4 fixes en Brevo (día 1, 5, 12, 16). Falta confirmar en unos días si el % de reclamos del PDF sube desde el 6.5% actual — ese es el indicador real de que el fix funcionó.
 
+### Jornada 24 Jul 2026 — Fase 1 de nicho + limpieza de prueba social falsa + Mom Test enviado
+
+**Chequeo post-pausa:** cron de publicaciones corriendo normal (últimos posts 20/22/24 jul sin error, quedan 26/27/29/31 jul + las 2 Intermittent de agosto). Leads nuevos: cero desde la pausa del 15 jul (Brevo sigue en 62) — el orgánico solo aún no genera opt-ins, la pauta era la única fuente. Campañas de megusta confirmadas en PAUSED.
+
+**Continuity model ("Colombia Insider") — diseñado pero con gate.** Blueprint: Bonus Continuity sobre el Explorer Bundle ($37 → 3 meses gratis de membresía, después $7-9/mes vía membership nativo de Gumroad), contenido mensual = digest curado de lo que `intel-gather` ya recolecta (Edge Function delgada nueva `insider-digest`, sin infra nueva de pagos). **Gate explícito: NO construirlo hasta tener 5-10 ventas reales de $17/$37.** Razones: (a) secuencia de Hormozi — cada etapa financia la siguiente, y Attraction aún no probó recuperar CAC (0 ventas); (b) preparar un viaje no tiene consumo recurrente natural, el avatar de membresía es otro (nómadas/expats de estadía larga, no turista de una semana).
+
+**Revisión de la oferta con $100M Offers — hallazgo grave: prueba social inventada en el landing.** 4 testimonios ficticios con nombre/ciudad/resultado ("Jake R., Austin TX"...), contador "2,847+ briefed", "4.9 avg rating", "Joined by 2,847+ travelers" y "Every traveler who bought this guide said..." — todo sin una sola venta real detrás. Riesgo legal (FTC), de cuenta Meta si vuelve la pauta, y de conversión (prueba social falsa que no aguanta un chequeo destruye más confianza que no tener ninguna). **Todo eliminado y desplegado a producción (commit `5ce1e9d`), verificado contra el HTML real de megusta.com.co.** Hero ahora con datos verdaderos (3 ciudades, 90+ páginas, updated 2026). Segunda corrección: el FAQ decía "all sales final" (anti-guarantee, solo funciona con marca fuerte y demanda alta — megusta no tiene ninguna de las dos). Reemplazado por garantía incondicional en 3 puntos del landing: "si no te ahorra más de lo que costó, devolución sin preguntas". **Compromiso operativo: honrar cualquier devolución por Gumroad sin fricción.** Score de la oferta: pasó de 4/10 a ~6-7/10; el resto del rediseño espera la Fase 2.
+
+**Fase 1 — análisis de nicho (starving crowd + positioning). Veredicto: la crowd existe pero no compra esta categoría.**
+- Mercado creciendo ✅ (10.2M movimientos internacionales 2025, +6%, EE.UU. fuente #1 con 24%; Medellín ~8,300 nómadas/mes), dolor real ✅ (los 185 hits de intel-gather repiten las mismas preguntas; hilo real "Cancel my Trip and lose $1500 but avoid the pitfalls"), targeteable ✅ (CTR 15-18% ya probado).
+- **El criterio que falla: disposición a pagar por ESTA categoría.** El competidor más directo (MOOD Travel "Guide to Move to Colombia") se vende a $0 como lead magnet de un paquete de viaje. Medellin Guru (incumbente de contenido gratis) monetiza servicios de visa vía expatgroup.co + Patreon. Nomad List cobra $99 lifetime por comunidad. Conclusión: la información sobre Colombia es un commodity que se regala; el mercado paga servicios, comunidad y curaduría confiable/vigente — no PDFs de una marca desconocida, menos aún compitiendo contra Reddit gratis + ChatGPT.
+- **El activo diferenciable de megusta: vigencia verificada por locales.** `intel-gather` produce lo único que ni ChatGPT ni los blogs de 2019 pueden afirmar con credibilidad: intel fresco con fecha. El reposicionamiento candidato para Fase 2: dejar de vender "una guía" y vender "intel verificado este mes, por locales" (categoría de uno).
+- **Mom Test enviado a los 62 leads reales** (campaña Brevo id 28, asunto "Quick question about your Colombia trip", remitente "Miguel from Me Gusta Colombia", pregunta única: cuándo viajas y por cuánto tiempo). Objetivo: decidir el avatar del relanzamiento (turista primerizo vs. nómada de estadía larga). Respuestas llegan a hola@megusta.com.co.
+
+**Herramientas de imagen (decisión de Miguel, 24 jul):** Higgsfield descartado (no lo paga — anotado en `~/.claude/CLAUDE.md`, no proponerlo). Stack vigente: nano banana por API (gratis con GEMINI_API_KEY) + Draw Things local (modelo 1.3B).
+
 ### Pendiente
+- **Leer las respuestas del Mom Test en hola@megusta.com.co (2-3 días)** y decidir el avatar → con eso arranca la Fase 2 (reconstrucción completa de la oferta con el reposicionamiento "intel verificado este mes, por locales").
+- **Si llega una devolución por Gumroad: honrarla sin fricción** — la garantía nueva del landing lo promete explícitamente.
 - **Confirmar en unos días si sube el % de reclamos del PDF gratis** tras los fixes de email del 15 Jul (noche) — línea base: 4 de 62 (6.5%).
 - **Diseñar el continuity model ("Colombia Insider")** — la reformulación de mayor apalancamiento identificada, aún sin explorar en detalle (pricing, qué incluye, cómo se conecta con `intel-gather`).
 - **Armar el script de Warm Outreach** (Hinge Method: pedir referidos, no vender directo a la red personal de Miguel) — quedó ofrecido, no ejecutado.
@@ -755,4 +773,4 @@ Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
 NO guardar credenciales en este archivo ni en archivos commiteados.
 
 ---
-*Última actualización: 15 Jul 2026 (tarde)*
+*Última actualización: 24 Jul 2026*
