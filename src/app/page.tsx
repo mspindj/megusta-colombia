@@ -130,58 +130,13 @@ const faqs = [
   },
   {
     q: "Can I get a refund?",
-    a: "Digital product, all sales final. At $17, it's less than a bad taxi ride.",
+    a: "Yes. If the guide doesn't show you at least one thing that saves you more than $17, reply to your receipt email and we'll refund you. No questions asked.",
   },
   {
     q: "Who made this?",
     a: "Locals who watched tourists make the same mistakes for years.",
   },
 ];
-
-const testimonials = [
-  {
-    name: "Jake R.",
-    location: "Austin, TX",
-    badge: "BOG-72H",
-    badgeAccent: "bogota",
-    quote:
-      "A moto-taxi driver tried to charge me $40 from the airport. I already knew from the guide that the official taxi counter price was $8. Paid $8, kept $32. Guide paid for itself in literally 10 minutes.",
-    keyResult: "Saved $32 in 10 minutes",
-  },
-  {
-    name: "Sarah L.",
-    location: "London, UK",
-    badge: "MDE-72H",
-    badgeAccent: "medellin",
-    quote:
-      "My friends who didn't read it ended up in the wrong neighborhood on night one and had to Uber back to Poblado. I went straight to the right zones — the nightlife chapter is worth the entire price.",
-    keyResult: "Knew exactly where to go on night one",
-  },
-  {
-    name: "Marcus W.",
-    location: "Toronto, CA",
-    badge: "CTG-72H",
-    badgeAccent: "cartagena",
-    quote:
-      "Other tourists on my boat to Rosario paid 180,000 COP. I negotiated 95,000 because the guide told me the real price and the exact phrase to use. The vendor negotiation section alone is worth 10x the guide price.",
-    keyResult: "Paid almost half what other tourists paid",
-  },
-  {
-    name: "Emma K.",
-    location: "Sydney, AU",
-    badge: "BOG-72H",
-    badgeAccent: "bogota",
-    quote:
-      "Downloaded it on the plane from Sydney. By the time I landed at El Dorado I felt like I'd already been there a week. No anxiety at immigration, no confusion with the SIM card, no taxi scam. Just ready.",
-    keyResult: "Felt like I'd already been there",
-  },
-];
-
-const badgeBgClass: Record<string, string> = {
-  bogota: "bg-[#c0392b]/20 text-[#c0392b]",
-  medellin: "bg-[#27ae60]/20 text-[#27ae60]",
-  cartagena: "bg-[#2980b9]/20 text-[#2980b9]",
-};
 
 const accentBorderClass: Record<string, string> = {
   bogota: "border-[#c0392b]",
@@ -384,24 +339,20 @@ export default function Home() {
           >
             <span>
               <span className="text-foreground font-bold">
-                <CountUp end={2847} suffix="+" />
-              </span>{" "}
-              briefed
-            </span>
-            <span className="text-border">|</span>
-            <span>
-              ⭐{" "}
-              <span className="text-foreground font-bold">
-                <CountUp end={4.9} decimals={1} />
-              </span>{" "}
-              avg rating
-            </span>
-            <span className="text-border">|</span>
-            <span>
-              <span className="text-foreground font-bold">
                 <CountUp end={3} />
               </span>{" "}
               cities covered
+            </span>
+            <span className="text-border">|</span>
+            <span>
+              <span className="text-foreground font-bold">
+                <CountUp end={90} suffix="+" />
+              </span>{" "}
+              pages of street-level intel
+            </span>
+            <span className="text-border">|</span>
+            <span>
+              Updated <span className="text-foreground font-bold">2026</span>
             </span>
           </motion.div>
           <motion.p
@@ -540,64 +491,6 @@ export default function Home() {
                   {ch.num}
                 </span>
                 <p className="mt-2 font-semibold text-foreground">{ch.title}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
-
-      {/* TESTIMONIALS */}
-      <section className="py-20 sm:py-28 bg-card">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <motion.div
-            variants={sectionVariants}
-            initial={prefersReducedMotion ? false : "hidden"}
-            whileInView="visible"
-            viewport={viewportOnce}
-            style={{ willChange: "transform" }}
-          >
-            <p className="font-mono text-xs text-primary tracking-[0.3em] uppercase mb-3 text-center">
-              Field Reports // Post-Landing Intel
-            </p>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-12">
-              They landed prepared. Here&apos;s what happened.
-            </h2>
-          </motion.div>
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
-            variants={staggerContainer(0.1)}
-            initial={prefersReducedMotion ? false : "hidden"}
-            whileInView="visible"
-            viewport={viewportOnce}
-          >
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={i}
-                variants={fadeUpItem(0.6)}
-                className="bg-background border border-border rounded-lg p-6 border-l-[3px] border-l-primary hover:shadow-lg hover:shadow-primary/5 transition-all"
-                style={{ willChange: "transform" }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span
-                    className={`font-mono text-xs px-2.5 py-0.5 rounded-full ${badgeBgClass[t.badgeAccent]}`}
-                  >
-                    {t.badge}
-                  </span>
-                  <span className="text-primary text-sm tracking-wide">
-                    ★★★★★
-                  </span>
-                </div>
-                <p className="text-muted-foreground text-sm leading-relaxed italic mb-3">
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <p className="text-primary font-bold text-sm mb-4">
-                  → {t.keyResult}
-                </p>
-                <p className="font-mono text-xs text-muted-foreground">
-                  {t.name} · {t.location}
-                </p>
               </motion.div>
             ))}
           </motion.div>
@@ -808,7 +701,7 @@ export default function Home() {
                 )}
 
                 <p className="text-xs text-muted-foreground mt-4 font-mono">
-                  Joined by 2,847+ travelers. No spam. Unsubscribe anytime.
+                  No spam. Unsubscribe anytime.
                 </p>
               </div>
             </div>
@@ -989,6 +882,10 @@ export default function Home() {
           >
             GET THE EXPLORER BUNDLE
           </a>
+          <p className="text-muted-foreground text-xs font-mono mt-4">
+            If it doesn&apos;t save you at least what you paid, reply to your
+            receipt and we refund it. No questions asked.
+          </p>
         </motion.div>
       </section>
 
@@ -1049,9 +946,9 @@ export default function Home() {
             Still scrolling? Your trip is closer than you think.
           </h2>
           <p className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-2xl mx-auto mb-8">
-            Every traveler who bought this guide said the same thing: &ldquo;I
-            wish I had this on my last trip.&rdquo; Don&apos;t be the one who
-            says it after.
+            Read it on the plane. Land knowing the taxi price, the SIM card
+            spot, and the neighborhoods that work. If it doesn&apos;t save you
+            more than it costs, we refund it.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-4">
             <Button
@@ -1071,8 +968,8 @@ export default function Home() {
             </a>
           </div>
           <p className="text-muted-foreground text-xs font-mono">
-            Join <CountUp end={2847} suffix="+" /> travelers who landed
-            prepared, not panicked.
+            No dar papaya, guaranteed: if it doesn&apos;t save you at least
+            $17, you get your money back.
           </p>
         </motion.div>
       </section>
