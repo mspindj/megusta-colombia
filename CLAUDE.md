@@ -645,7 +645,18 @@ Form submit → subscribe v22
 
 **Herramientas de imagen (decisión de Miguel, 24 jul):** Higgsfield descartado (no lo paga — anotado en `~/.claude/CLAUDE.md`, no proponerlo). Stack vigente: nano banana por API (gratis con GEMINI_API_KEY) + Draw Things local (modelo 1.3B).
 
+### Jornada 24 Jul 2026 (noche) — Unsubscribe roto desde el día 10, encontrado por reporte real de un lead
+
+**Miguel pasó la única respuesta recibida hasta ahora en la bandeja — resultó no ser del Mom Test.** La cita ("On Wed, Jul 22...") no coincide con el envío del Mom Test (24 Jul), coincide con el timing del automático del día 10 según su fecha real de suscripción. Seguimos en cero respuestas reales al Mom Test.
+
+**Pero el contenido del reply destapó un bug real: el botón de Unsubscribe no funciona desde el día 10 en adelante.** Verificado con datos reales, no con el código: en los últimos 90 días solo hay UN evento `unsubscribed` en toda la automation, y es en el email de día 1 (usa el tag `{{ unsubscribe }}`). Cero desuscripciones exitosas registradas en día 10, 12, 16, 19, 21 y 23 pese a cientos de envíos acumulados — esos 6 templates usan `{{unsubscribeLink}}`, que no es un merge tag real de Brevo, mismo patrón que `{{CHEAT_SHEET_PDF_URL}}` del 15 Jul.
+
+**Por qué es más grave que los bugs de link anteriores:** sin unsubscribe funcional, la gente que quiere salir no puede y marca como spam en su lugar — eso daña la reputación de envío de `hola@megusta.com.co` para toda la cuenta, no solo para esa persona.
+
+**6 templates corregidos (mismo cambio en los 6, `{{unsubscribeLink}}` → `{{ unsubscribe }}`):** día 10 (id 26), día 12 (id 19), día 16 (id 20), día 19 (id 21), día 21 (id 27), día 23 (id 22). Entregados a Miguel como HTML completo para pegar manualmente (limitación ya documentada en error #36: PUT de la API 404 en templates de Automation).
+
 ### Pendiente
+- **Confirmar que Miguel aplicó los 6 fixes de unsubscribe** y que empiezan a registrarse eventos `unsubscribed` reales en esos templates.
 - **Leer las respuestas del Mom Test en hola@megusta.com.co (2-3 días)** y decidir el avatar → con eso arranca la Fase 2 (reconstrucción completa de la oferta con el reposicionamiento "intel verificado este mes, por locales").
 - **Si llega una devolución por Gumroad: honrarla sin fricción** — la garantía nueva del landing lo promete explícitamente.
 - **Confirmar en unos días si sube el % de reclamos del PDF gratis** tras los fixes de email del 15 Jul (noche) — línea base: 4 de 62 (6.5%).
