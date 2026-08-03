@@ -655,6 +655,16 @@ Form submit → subscribe v22
 
 **6 templates corregidos (mismo cambio en los 6, `{{unsubscribeLink}}` → `{{ unsubscribe }}`):** día 10 (id 26), día 12 (id 19), día 16 (id 20), día 19 (id 21), día 21 (id 27), día 23 (id 22). Entregados a Miguel como HTML completo para pegar manualmente (limitación ya documentada en error #36: PUT de la API 404 en templates de Automation).
 
+### Jornada 3 Ago 2026 — Página de unsubscribe con marca + agosto completo en el queue
+
+**Página de unsubscribe de Brevo, con marca (aplicada por Miguel).** El editor default de Brevo no acepta HTML libre (sí bloques normales + botón), y el flujo real es de DOS pasos: la página muestra el copy y un botón que es la acción real de confirmar la baja (protección contra scanners de seguridad que abren links automáticamente). Copy final: label "Leaving the list?" → cuerpo pidiendo confirmar clic → botón renombrado a inglés "Confirm Unsubscribe" (traía "Cancelar la suscripción" en español, no combinaba con el resto en inglés) → línea de "sigue en megusta.com.co si cambias de opinión". El HTML de referencia (para cuando Brevo sí soporte pegar código, o para otro ESP) queda en `docs/emails/brevo-live-fixes-jul2026/unsubscribe-page.html`.
+
+**Encuesta de cancelación activada.** Idioma inglés (coherente con el resto), las 5 razones default de Brevo, sin redirect post-encuesta ("Sin confirmación"). Dato a explotar más adelante si Brevo permite razones custom: agregar una específica de este nicho ("ya viajé / no viajo más") — distingue churn sano (el producto cumplió su ciclo) de churn por mala experiencia, algo que las 5 genéricas no separan.
+
+**El queue de agosto se secaba el 9 de agosto.** Cero ideas aprobadas para el resto del mes (179 pending, 0 con fecha asignada más allá del 9). Se curaron y aprobaron 13 ideas del pool de `intel-gather` con variedad real (BOG/MDE/CTG, seguridad, slang, nómadas, visa, cultura de estafas sin acusar instituciones), completando el calendario hasta el 31 de agosto sin necesidad de que Miguel entrara al dashboard.
+
+**Bug nuevo encontrado: el trigger async puede fallar en silencio incluso en lotes normales (no solo en los grandes ya documentados en error #29).** De las 13 ideas aprobadas en un solo `UPDATE`, 2 cayeron en la misma fecha (colisión ya conocida, corregida a mano) y **1 no se procesó en absoluto** — el trigger de Postgres nunca disparó la llamada a `idea-to-queue`, sin dejar ningún rastro de error en los logs de la función (ni siquiera un intento fallido). Se detectó porque el conteo final (12 de 13) no cuadraba, se invocó la función manualmente vía `POST /functions/v1/idea-to-queue` con `{idea_id: "..."}` para esa idea puntual, y proceso normal desde ahí. **Regla nueva: después de cualquier aprobación en batch, contar cuántas ideas realmente llegaron a `content_queue` contra cuántas se aprobaron — no asumir que todas se procesaron solo porque no hubo error visible.**
+
 ### Pendiente
 - **Confirmar en unos días que empiezan a registrarse eventos `unsubscribed` reales** en los templates de día 10/12/16/19/21/23 — los 6 fixes ya se aplicaron en Brevo (29 Jul, HTML entregado en `docs/emails/brevo-live-fixes-jul2026/`).
 - **Leer las respuestas del Mom Test en hola@megusta.com.co (2-3 días)** y decidir el avatar → con eso arranca la Fase 2 (reconstrucción completa de la oferta con el reposicionamiento "intel verificado este mes, por locales").
@@ -784,4 +794,4 @@ Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
 NO guardar credenciales en este archivo ni en archivos commiteados.
 
 ---
-*Última actualización: 29 Jul 2026*
+*Última actualización: 3 Ago 2026*
