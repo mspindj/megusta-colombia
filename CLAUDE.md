@@ -656,7 +656,7 @@ Form submit → subscribe v22
 **6 templates corregidos (mismo cambio en los 6, `{{unsubscribeLink}}` → `{{ unsubscribe }}`):** día 10 (id 26), día 12 (id 19), día 16 (id 20), día 19 (id 21), día 21 (id 27), día 23 (id 22). Entregados a Miguel como HTML completo para pegar manualmente (limitación ya documentada en error #36: PUT de la API 404 en templates de Automation).
 
 ### Pendiente
-- **Confirmar que Miguel aplicó los 6 fixes de unsubscribe** y que empiezan a registrarse eventos `unsubscribed` reales en esos templates.
+- **Confirmar en unos días que empiezan a registrarse eventos `unsubscribed` reales** en los templates de día 10/12/16/19/21/23 — los 6 fixes ya se aplicaron en Brevo (29 Jul, HTML entregado en `docs/emails/brevo-live-fixes-jul2026/`).
 - **Leer las respuestas del Mom Test en hola@megusta.com.co (2-3 días)** y decidir el avatar → con eso arranca la Fase 2 (reconstrucción completa de la oferta con el reposicionamiento "intel verificado este mes, por locales").
 - **Si llega una devolución por Gumroad: honrarla sin fricción** — la garantía nueva del landing lo promete explícitamente.
 - **Confirmar en unos días si sube el % de reclamos del PDF gratis** tras los fixes de email del 15 Jul (noche) — línea base: 4 de 62 (6.5%).
@@ -784,4 +784,4 @@ Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
 NO guardar credenciales en este archivo ni en archivos commiteados.
 
 ---
-*Última actualización: 24 Jul 2026*
+*Última actualización: 29 Jul 2026*
