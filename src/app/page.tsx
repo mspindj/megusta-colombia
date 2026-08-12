@@ -117,24 +117,28 @@ const cities = [
 
 const faqs = [
   {
-    q: "Is this a regular travel guide?",
-    a: "No. This tells you how to survive — scam-free, stress-free. No fluff about the best Instagram spots.",
+    q: "What do I actually get?",
+    a: "The Arrival Cheat Sheet. One PDF: what a taxi from the airport costs, where to buy a SIM that works, which neighborhoods are fine after dark, what to do in your first 24 hours. No account, no card.",
   },
   {
-    q: "I already checked Reddit. Why pay?",
-    a: "Reddit has fragments across 200 threads from 2019. This is curated, structured, and current.",
+    q: "How often will you email me?",
+    a: "Ten emails over your first 25 days. That is the whole sequence.",
   },
   {
-    q: "What format is it?",
-    a: "Downloadable PDF. Read on your phone on the plane.",
+    q: "Is this bait for the paid guides?",
+    a: "Partly. The cheat sheet is free and complete on its own. The city files are $17 and go deeper. Never buy one and the cheat sheet still works.",
   },
   {
-    q: "Can I get a refund?",
-    a: "Yes. If the guide doesn't show you at least one thing that saves you more than $17, reply to your receipt email and we'll refund you. No questions asked.",
+    q: "Who is behind this?",
+    // TODO(megusta): falta el dato real. El producto entero se apoya en "somos
+    // locales" y esta respuesta es lo único que lo sostiene. Hace falta un nombre
+    // que firme, o al menos cuántas fuentes son y en qué ciudades. Un colectivo
+    // anónimo es una afirmación, no una prueba.
+    a: "[FALTA: nombre real y una línea de por qué esta persona sabe de esto]",
   },
   {
-    q: "Who made this?",
-    a: "Locals who watched tourists make the same mistakes for years.",
+    q: "What happens to my email?",
+    a: "One list. We don't sell it or share it. Unsubscribe link in every email.",
   },
 ];
 
@@ -286,12 +290,16 @@ export default function Home() {
             style={{
               backgroundImage: `url(${bg})`,
               opacity: bgIndex === i ? 1 : 0,
-              filter: "saturate(0.4) brightness(0.55) contrast(0.9)",
+              // Los mapas callejeros reales de las tres ciudades son el activo menos
+              // copiable de la página, y estaban apagados hasta ser textura: el propio
+              // comentario decía "map stays as subtle texture". Subo saturación y brillo
+              // para que se lean como mapas. El overlay de abajo bajó de 0.78 a 0.62.
+              filter: "saturate(0.7) brightness(0.8) contrast(0.95)",
             }}
           />
         ))}
         {/* Strong uniform overlay — map stays as subtle texture */}
-        <div className="absolute inset-0" style={{ background: "rgba(10,10,10,0.78)" }} />
+        <div className="absolute inset-0" style={{ background: "rgba(10,10,10,0.62)" }} />
         {/* Bottom-fade so content blends into page background */}
         <div
           className="absolute inset-0 pointer-events-none"
@@ -408,6 +416,12 @@ export default function Home() {
                 <form onSubmit={handleLeadSubmit} className="flex-1 flex flex-col gap-2">
                   <Input
                     type="email"
+                    name="email"
+                    autoComplete="email"
+                    required
+                    aria-label="Your email address"
+                    aria-invalid={leadStatus === "error"}
+                    aria-describedby={leadStatus === "error" ? "lead-error-hero" : undefined}
                     placeholder="your@email.com"
                     value={leadEmail}
                     onChange={(e) => {
@@ -432,12 +446,18 @@ export default function Home() {
             )}
 
             {leadStatus === "error" && (
-              <p className="text-xs text-destructive mt-2 text-center">{leadError}</p>
+              <p id="lead-error-hero" role="alert" className="text-xs text-destructive mt-2 text-center">{leadError}</p>
             )}
 
+            {/* Tranquilización: va DENTRO del bloque del formulario y no debajo del
+                pliegue. Medido a 1280x720 el 11/08: el botón terminaba en 687px y
+                esta línea caía en 742px, o sea el visitante veía el CTA y no veía la
+                promesa de no-spam justo en el momento de mayor riesgo percibido.
+                El contraste subió de white/45 (4,52:1, el mínimo justo de AA sobre un
+                fondo que rota cada 4s) a white/70. */}
             {leadStatus !== "success" && (
-              <p className="text-xs text-white/45 mt-3 text-center max-w-md mx-auto leading-relaxed">
-                <span className="font-mono">Local prices · Local neighborhoods · No spam · Unsubscribe anytime</span>
+              <p className="text-xs text-white/70 mt-3 text-center max-w-md mx-auto leading-relaxed">
+                <span className="font-mono">62 people have it · No spam · Unsubscribe anytime</span>
               </p>
             )}
           </motion.div>
@@ -677,6 +697,12 @@ export default function Home() {
                     <div className="flex flex-col sm:flex-row gap-3 max-w-md">
                       <Input
                         type="email"
+                        name="email"
+                        autoComplete="email"
+                        required
+                        aria-label="Your email address"
+                        aria-invalid={leadStatus === "error"}
+                        aria-describedby={leadStatus === "error" ? "lead-error-mid" : undefined}
                         placeholder="your@email.com"
                         value={leadEmail}
                         onChange={(e) => {
@@ -1005,9 +1031,13 @@ export default function Home() {
                   name: "Pinterest",
                   url: "https://www.pinterest.com/megustacolombia",
                 },
-                { name: "Facebook", url: "https://facebook.com" },
-                { name: "Instagram", url: "https://instagram.com" },
-              ].map((s) => (
+                // TODO(megusta): estos dos iban a los dominios pelados. Pulsabas
+                // "INSTAGRAM" y llegabas a la portada de Instagram. En una página cuyo
+                // problema central es la confianza, eso la resta gratis. Se ocultan
+                // hasta que existan los perfiles; poner la URL real y devolverlos.
+                { name: "Facebook", url: "https://facebook.com", hidden: true },
+                { name: "Instagram", url: "https://instagram.com", hidden: true },
+              ].filter((s) => !s.hidden).map((s) => (
                 <a
                   key={s.name}
                   href={s.url}
@@ -1027,7 +1057,23 @@ export default function Home() {
       </motion.footer>
 
       {/* STICKY MOBILE LEAD CAPTURE BAR */}
+      {/* La condición era `showBackToTop && leadStatus !== "success"`: al enviar bien,
+          la barra se desvanecía sin confirmar nada. Si estabas leyendo el FAQ, la
+          interfaz se comía tu acción. Ahora en éxito se queda y confirma. */}
       <AnimatePresence>
+        {showBackToTop && leadStatus === "success" && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur-md border-t border-border px-4 py-3 shadow-2xl"
+          >
+            <p role="status" className="text-sm text-center font-mono text-primary max-w-sm mx-auto">
+              ✓ Check your inbox. Check spam if needed.
+            </p>
+          </motion.div>
+        )}
         {showBackToTop && leadStatus !== "success" && (
           <motion.div
             initial={{ y: 80, opacity: 0 }}
@@ -1039,6 +1085,12 @@ export default function Home() {
             <form onSubmit={handleLeadSubmit} className="flex gap-2 max-w-sm mx-auto">
               <Input
                 type="email"
+                name="email"
+                autoComplete="email"
+                required
+                aria-label="Your email address"
+                aria-invalid={leadStatus === "error"}
+                aria-describedby={leadStatus === "error" ? "lead-error-sticky" : undefined}
                 placeholder="Get free cheat sheet →"
                 value={leadEmail}
                 onChange={(e) => {
@@ -1057,6 +1109,21 @@ export default function Home() {
                 {leadStatus === "loading" ? "..." : "FREE →"}
               </Button>
             </form>
+            {/* La barra fallaba en SILENCIO: handleLeadSubmit escribía leadError y el
+                hero y el formulario de media página lo renderizaban, pero acá no había
+                nada. En móvil, que es el punto de captura más alcanzable, pulsabas con
+                un correo inválido y no pasaba nada visible. */}
+            {leadStatus === "error" && (
+              <p id="lead-error-sticky" role="alert" className="text-xs text-destructive mt-2 text-center max-w-sm mx-auto">
+                {leadError}
+              </p>
+            )}
+            {/* Y la tranquilización tampoco existía acá. */}
+            {leadStatus !== "error" && (
+              <p className="text-[11px] text-white/70 mt-2 text-center font-mono max-w-sm mx-auto">
+                62 people have it · No spam
+              </p>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

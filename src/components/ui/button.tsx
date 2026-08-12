@@ -8,7 +8,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
+        // El `[a]:` limitaba el hover a elementos <a>, así que TODOS los <button>
+        // quedaban sin respuesta: el CTA principal, los tres GET INTEL y Send Me the
+        // PDF. Y `primary/80` sobre fondo #0a0a0a OSCURECE el dorado; DESIGN.md §3
+        // especifica aclararlo a #e8c96a, y §7 ya documenta la opacidad sobre fondo
+        // oscuro como gotcha conocido. Reaparecía acá.
+        default: "bg-primary text-primary-foreground hover:bg-[#e8c96a]",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
