@@ -54,3 +54,8 @@ docs/reels/audio/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Exports de Brevo/leads: traen correos reales de suscriptores.
+# Sin esto, un `git add -A` los publica en GitHub para siempre.
+*logs-export*.csv
+leads/*.csv
