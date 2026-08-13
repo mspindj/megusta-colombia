@@ -317,13 +317,15 @@ export default function Home() {
         >
           <motion.p
             variants={heroChildVariants}
-            className="font-mono text-xs tracking-[0.3em] uppercase text-primary/60 mb-4"
+            className="font-mono text-xs tracking-[0.3em] uppercase text-primary mb-4"
+            style={{ textShadow: "0 1px 3px rgba(10,10,10,0.9), 0 0 12px rgba(10,10,10,0.7)" }}
           >
             For travelers who refuse to wing it
           </motion.p>
           <motion.p
             variants={heroChildVariants}
-            className="font-mono text-xs sm:text-sm text-primary tracking-[0.3em] mb-6 uppercase"
+            className="font-mono text-xs sm:text-sm text-primary tracking-[0.3em] mb-4 uppercase"
+            style={{ textShadow: "0 1px 3px rgba(10,10,10,0.9), 0 0 12px rgba(10,10,10,0.7)" }}
           >
             Classified // First-Timer Protocol
           </motion.p>
@@ -336,7 +338,7 @@ export default function Home() {
           </motion.h1>
           <motion.p
             variants={heroChildVariants}
-            className="text-muted-foreground text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed"
+            className="text-muted-foreground text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-5 leading-relaxed"
           >
             Taxi prices that don't change when you say amigo. A SIM card in 5
             minutes. The neighborhoods locals actually live in. Free briefing.
@@ -365,7 +367,7 @@ export default function Home() {
           </motion.div>
           <motion.p
             variants={heroChildVariants}
-            className="italic text-sm text-muted-foreground mb-8"
+            className="italic text-sm text-muted-foreground mb-5"
           >
             Your flight is booked. The clock started.
           </motion.p>
@@ -441,6 +443,15 @@ export default function Home() {
                   >
                     {leadStatus === "loading" ? "Sending..." : "SKIP THE LEARNING CURVE →"}
                   </Button>
+                  {/* Va DENTRO del form, pegada al botón, y esa posición es el punto.
+                      Medido a 1280x720: cuando esta línea vivía fuera del bloque caía
+                      en 742px contra un pliegue de 720, o sea el visitante veía el CTA
+                      y NO veía la promesa de no-spam, justo en el momento de mayor
+                      riesgo percibido. Sin condición de estado: este bloque ya está
+                      dentro de uno que descarta "success". */}
+                  <p className="text-xs text-white/70 text-center font-mono leading-snug">
+                    62 people have it · No spam
+                  </p>
                 </form>
               </div>
             )}
@@ -449,17 +460,6 @@ export default function Home() {
               <p id="lead-error-hero" role="alert" className="text-xs text-destructive mt-2 text-center">{leadError}</p>
             )}
 
-            {/* Tranquilización: va DENTRO del bloque del formulario y no debajo del
-                pliegue. Medido a 1280x720 el 11/08: el botón terminaba en 687px y
-                esta línea caía en 742px, o sea el visitante veía el CTA y no veía la
-                promesa de no-spam justo en el momento de mayor riesgo percibido.
-                El contraste subió de white/45 (4,52:1, el mínimo justo de AA sobre un
-                fondo que rota cada 4s) a white/70. */}
-            {leadStatus !== "success" && (
-              <p className="text-xs text-white/70 mt-3 text-center max-w-md mx-auto leading-relaxed">
-                <span className="font-mono">62 people have it · No spam · Unsubscribe anytime</span>
-              </p>
-            )}
           </motion.div>
           {showChevron && (
             <motion.div
