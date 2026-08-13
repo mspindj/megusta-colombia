@@ -130,11 +130,7 @@ const faqs = [
   },
   {
     q: "Who is behind this?",
-    // TODO(megusta): falta el dato real. El producto entero se apoya en "somos
-    // locales" y esta respuesta es lo único que lo sostiene. Hace falta un nombre
-    // que firme, o al menos cuántas fuentes son y en qué ciudades. Un colectivo
-    // anónimo es una afirmación, no una prueba.
-    a: "[FALTA: nombre real y una línea de por qué esta persona sabe de esto]",
+    a: "Juan and Miguel, plus five friends across Bogotá, Medellín and Cartagena. We got tired of watching visitors overpay for things we know the real price of. You are a guest here, not a mark.",
   },
   {
     q: "What happens to my email?",
