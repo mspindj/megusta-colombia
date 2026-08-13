@@ -612,18 +612,25 @@ export default function Home() {
             whileInView="visible"
             viewport={viewportOnce}
           >
-            <a
-              href="https://megustacomco.gumroad.com/l/colombia-arrival-cheat-sheet"
-              target="_blank"
-              rel="noopener noreferrer"
+            {/* Antes iba a Gumroad, al mismo cheat sheet gratis ($0+). Gumroad pide
+                correo para entregar, así que esa persona daba su correo A GUMROAD:
+                no entraba a la lista de Brevo ni a la secuencia de 10 correos, y
+                quedaba invisible. Medido el 12/08: 4 descargas por esa vía contra 62
+                suscriptores en Brevo. Fuga pequeña, pero fuga.
+                Ahora va al formulario de la propia página, que sí alimenta el flujo.
+                De paso desaparece el <button> dentro de <a>, que era HTML inválido y
+                producía dos paradas de tabulación. */}
+            <Button
+              size="lg"
+              className="text-base font-bold tracking-wide px-8"
+              onClick={() =>
+                document
+                  .getElementById("free-intel")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
             >
-              <Button
-                size="lg"
-                className="text-base font-bold tracking-wide px-8"
-              >
-                BECOME THE PREPARED TRAVELER
-              </Button>
-            </a>
+              BECOME THE PREPARED TRAVELER
+            </Button>
             <p className="font-mono text-xs text-muted-foreground mt-3">
               Instant PDF download. Read it on the plane.
             </p>
