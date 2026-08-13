@@ -1,0 +1,4 @@
+{
+  "tipos": 0,
+  "_nota_lint": "eslint no revisa nada en este repo: el script es \"eslint\" sin ruta y la config de flat config no matchea src/. Arreglar eslint.config.js antes de volver a medir lint aqui. Verificado 11/08/2026."
+}
