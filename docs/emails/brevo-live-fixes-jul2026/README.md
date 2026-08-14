@@ -25,3 +25,53 @@ Se cambió a `{{ unsubscribe }}` (el tag que sí funciona, comprobado con la ún
 desuscripción real registrada en 90 días, que fue justamente en el día 1).
 
 Detalle completo en el CLAUDE.md del proyecto, jornada "24 Jul 2026 (noche)".
+
+---
+
+## Revisión del 13/08/2026: el paquete estaba incompleto
+
+Se revisaron los seis pendientes antes de pegarlos en Brevo. El arreglo del
+unsubscribe estaba bien en los seis, pero había dos cosas más:
+
+**1. Cuatro CTA de $17 seguían apuntando al storefront genérico**, que es el
+mismo bug que este README dice haber arreglado el 15 de julio en el día 5. Eran
+botones dorados (`#d4a843`, el CTA primario del DESIGN.md) hacia
+`megustacomco.gumroad.com` a secas: el lector aterrizaba en una tienda con cinco
+productos sin saber cuál era el suyo.
+
+Afectados: `day-10`, `day-16`, `day-19`, `day-21`.
+
+Ahora van a `megusta.com.co/#cities`, conservando sus UTM. Se eligió la sección
+de ciudades de la propia página y no el bundle porque el botón de $17 no puede
+tener destino fijo (son tres ciudades) y ahí el lector elige con contexto. El
+botón del bundle de $37 nunca estuvo roto y no se tocó.
+
+**2. Cuatro archivos traían `utm_campaign=TEMPLATE_NAME` y `utm_id=TEMPLATE_ID`
+sin rellenar**, incluidos los DOS QUE YA ESTÁN APLICADOS EN BREVO (`day-00` y
+`day-05`). Todo su tráfico llegaba a analítica bajo una campaña llamada
+literalmente "TEMPLATE_NAME", mezclando correos distintos.
+
+Rellenados con la convención de los que sí tenían nombre:
+
+| Archivo | utm_campaign | utm_id |
+|---|---|---|
+| `day-00-cheat-sheet-id15.html` | Lead Magnet Cheat Sheet D0 | 15 |
+| `day-05-city-picker-id18.html` | Lead Magnet City Picker | 18 |
+| `day-19-budget-id21.html` | Lead Magnet Budget D19 | 21 |
+| `day-23-where-are-you-going-id22.html` | Lead Magnet Where Are You Going D23 | 22 |
+
+**Ojo: `day-00` y `day-05` hay que volver a pegarlos en Brevo.** Ya estaban
+aplicados con el marcador adentro.
+
+### Estado tras la revisión
+
+Los ocho archivos pasan: `{{ unsubscribe }}` correcto, cero `unsubscribeLink`,
+cero marcadores `TEMPLATE_`, cero enlaces al storefront genérico, y el HTML
+cierra en todos.
+
+### Inconsistencia anotada, sin tocar
+
+`day-10-follow-up-id26.html` usa `utm_id=14` y `day-21-final-pitch-id27.html`
+usa `utm_id=15`, cuando sus nombres de archivo dicen id26 e id27. No se corrigió
+porque no se sabe cuál de los dos números es el bueno: el del nombre o el que
+ya está corriendo en Brevo. Verificar contra la automatización antes de cambiar.
