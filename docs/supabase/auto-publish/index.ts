@@ -1,7 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-// auto-publish — disparado por pg_cron `auto-publish-rotate`:
-//   0 14 * * 1,3,5,0  (14:00 UTC = 9am Colombia, lun/mié/vie/dom)
+// auto-publish — disparado por pg_cron (0 14 * * 1,3,5,0 = 9am Colombia lun/mié/vie/dom)
 //
 // Toma el próximo post de content_queue donde published=false AND publish_date<=today,
 // lo publica en IG via meta-publish, y marca published=true.
@@ -11,7 +10,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 //   en SUPABASE_SERVICE_ROLE_KEY funciona para REST pero no para Storage.
 // - meta-publish maneja el token de Meta internamente.
 // - Solo publica 1 post por invocación (evita bombardear IG aunque haya backlog).
-// - Reescrita 2026-05-27: antes leía de un array CONTENT_QUEUE hardcoded.
+// - type='carousel' + image_files (jsonb array de paths en carousels/) -> imageUrls[]
+//   type='image' (o legacy) + image_file -> imageUrl único, comportamiento sin cambios.
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -20,7 +20,7 @@ const CORS_HEADERS = {
 };
 
 const SUPABASE_URL = "https://uocwxwvcrnkfnnoyjzyb.supabase.co";
-const STORAGE_BASE = `${SUPABASE_URL}/storage/v1/object/public/content/posts`;
+const STORAGE_BASE = `${SUPABASE_URL}/storage/v1/object/public/content`;
 const META_PUBLISH_URL = `${SUPABASE_URL}/functions/v1/meta-publish`;
 
 interface QueuePost {
@@ -28,6 +28,7 @@ interface QueuePost {
   publish_date: string;
   type: string;
   image_file: string | null;
+  image_files: string[] | null;
   video_file: string | null;
   caption: string;
 }
@@ -39,7 +40,7 @@ function todayISO(): string {
 async function getNextPost(jwt: string): Promise<QueuePost | null> {
   const today = todayISO();
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/content_queue?published=eq.false&publish_date=lte.${today}&order=publish_date.asc&limit=1&select=id,publish_date,type,image_file,video_file,caption`,
+    `${SUPABASE_URL}/rest/v1/content_queue?published=eq.false&publish_date=lte.${today}&order=publish_date.asc&limit=1&select=id,publish_date,type,image_file,image_files,video_file,caption`,
     { headers: { apikey: jwt, Authorization: `Bearer ${jwt}` } }
   );
   const rows: QueuePost[] = await res.json();
@@ -54,21 +55,26 @@ interface PublishResult {
 }
 
 async function publishViaMeta(post: QueuePost): Promise<PublishResult> {
-  if (!post.image_file) {
-    return { success: false, error: "No image_file in queue row" };
-  }
-  const imageUrl = `${STORAGE_BASE}/${post.image_file}`;
   // Limpieza: markdown bold no se renderiza en IG
   const message = post.caption.replace(/\*\*/g, "");
+
+  let body: Record<string, unknown>;
+  if (post.type === "carousel" && post.image_files && post.image_files.length > 1) {
+    // image_files guarda solo el filename (igual que image_file); el prefijo carousels/ va acá.
+    const imageUrls = post.image_files.map((f) => `${STORAGE_BASE}/carousels/${f}`);
+    body = { message, imageUrls, platforms: ["instagram"] };
+  } else {
+    if (!post.image_file) {
+      return { success: false, error: "No image_file in queue row" };
+    }
+    const imageUrl = `${STORAGE_BASE}/posts/${post.image_file}`;
+    body = { message, imageUrl, platforms: ["instagram"] };
+  }
 
   const res = await fetch(META_PUBLISH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message,
-      imageUrl,
-      platforms: ["instagram"], // FB requiere scope `pages_manage_posts` que el token actual no tiene
-    }),
+    body: JSON.stringify(body),
   });
 
   const data = await res.json();

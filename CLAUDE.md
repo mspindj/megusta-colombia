@@ -665,7 +665,26 @@ Form submit → subscribe v22
 
 **Bug nuevo encontrado: el trigger async puede fallar en silencio incluso en lotes normales (no solo en los grandes ya documentados en error #29).** De las 13 ideas aprobadas en un solo `UPDATE`, 2 cayeron en la misma fecha (colisión ya conocida, corregida a mano) y **1 no se procesó en absoluto** — el trigger de Postgres nunca disparó la llamada a `idea-to-queue`, sin dejar ningún rastro de error en los logs de la función (ni siquiera un intento fallido). Se detectó porque el conteo final (12 de 13) no cuadraba, se invocó la función manualmente vía `POST /functions/v1/idea-to-queue` con `{idea_id: "..."}` para esa idea puntual, y proceso normal desde ahí. **Regla nueva: después de cualquier aprobación en batch, contar cuántas ideas realmente llegaron a `content_queue` contra cuántas se aprobaron — no asumir que todas se procesaron solo porque no hubo error visible.**
 
+### Jornada 21 Ago 2026 — Carruseles con fotos reales: piloto, validación y automatización completa
+
+**Miguel reportó que el primer carrusel piloto (Cartagena, 16 Jul) rindió mejor que el formato de tarjeta oscura tipo AI.** Decisión: migrar todo el contenido nuevo a carrusel con fotos reales royalty-free (Pexels), retirando el fondo sólido `#0a0a0a` generado por Satori.
+
+**Infraestructura nueva construida (jornada anterior, hoy validada en producción):**
+- Función `carousel-slide` — compone 1 slide (foto real de fondo + overlay oscuro/dorado de marca + kicker + headline + contador). Formato 1080x1350 (4:5). Sube a `content/carousels/`.
+- `meta-publish` extendido con el flujo real de carrusel de Instagram (contenedor por imagen sin caption → contenedor padre `CAROUSEL` con `children` + caption → poll de `status_code` hasta `FINISHED` → publish). Facebook sigue usando solo la primera imagen (no soporta este flujo).
+- `auto-publish` extendido: detecta `type='carousel'` + `image_files` (columna nueva `jsonb`) y arma el array de URLs.
+- `idea-to-queue` extendido: cuando `content_type='carousel'`, Haiku devuelve 4-5 slides (búsqueda + kicker + headline) en vez de un solo hook; cada slide busca foto real en Pexels (`PEXELS_API_KEY`) y se compone vía `carousel-slide`.
+- Los 4 archivos ya estaban desplegados desde la jornada anterior pero **no sincronizados en el repo local** (`docs/supabase/*/index.ts` seguía en la versión vieja) — corregido hoy, incluida la carpeta nueva `docs/supabase/carousel-slide/`.
+
+**Agosto completado a mano (antes de tener la Pexels key):** los 6 posts que quedaban en agosto (23/24/26/28/30/31) se convirtieron a carrusel buscando fotos una por una en Pexels y componiendo con `carousel-slide` directo — 30 slides, un solo error de URL (una foto era `.png` no `.jpg`, corregido).
+
+**Miguel agregó `PEXELS_API_KEY` como secret de Supabase.** Probado en vivo: el pipeline completo (Haiku → Pexels → `carousel-slide` → `content_queue`) corre solo con solo aprobar una idea marcada `content_type='carousel'` — cero intervención manual. Verificado con una idea real que quedó como primer post de septiembre.
+
+**Septiembre completo: 17 posts** (uno por cada Sun/Mon/Wed/Fri del mes), aprobados en 2 lotes de 8 vía el pipeline ya automático. **Cero colisiones de fecha esta vez** (a diferencia del batch de agosto) — el tiempo real que toma cada carrusel (Haiku + 5 búsquedas de Pexels + 5 composiciones) da suficiente espacio entre invocaciones async para que `nextPublishDate()` no lea estado desviejo.
+
 ### Pendiente
+- **Monitorear engagement real de los carruseles de agosto/septiembre vs. las imágenes viejas** — la validación de Miguel fue sobre un solo post (16 Jul), falta confirmar que el patrón se sostiene con más volumen.
+- **Octubre sigue sin contenido** — el pipeline ya está listo, solo falta curar y aprobar ideas del pool cuando se retome.
 - **Confirmar en unos días que empiezan a registrarse eventos `unsubscribed` reales** en los templates de día 10/12/16/19/21/23 — los 6 fixes ya se aplicaron en Brevo (29 Jul, HTML entregado en `docs/emails/brevo-live-fixes-jul2026/`).
 - **Leer las respuestas del Mom Test en hola@megusta.com.co (2-3 días)** y decidir el avatar → con eso arranca la Fase 2 (reconstrucción completa de la oferta con el reposicionamiento "intel verificado este mes, por locales").
 - **Si llega una devolución por Gumroad: honrarla sin fricción** — la garantía nueva del landing lo promete explícitamente.
@@ -794,4 +813,4 @@ Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
 NO guardar credenciales en este archivo ni en archivos commiteados.
 
 ---
-*Última actualización: 3 Ago 2026*
+*Última actualización: 21 Ago 2026*

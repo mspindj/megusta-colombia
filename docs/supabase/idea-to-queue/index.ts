@@ -11,6 +11,14 @@ import { initWasm, Resvg } from "npm:@resvg/resvg-wasm@2.4.1";
 //      API rechaza esos nombres).
 //   3. Re-deploy SOLO via MCP `deploy_edge_function`. La Management API PATCH
 //      está rota y deja la function en BOOT_ERROR.
+//
+// AGOSTO 2026 — soporte de carrusel:
+//   content_type='carousel' -> Haiku devuelve 4-5 slides (search_query + kicker +
+//   headline) en vez de un solo hook. Cada slide busca una foto real royalty-free
+//   en Pexels (PEXELS_API_KEY) y se compone vía la función carousel-slide (foto +
+//   overlay de marca), NO Satori-sobre-fondo-solido como el flujo de imagen única.
+//   Requiere el secret PEXELS_API_KEY -- si falta, la idea queda marcada failed
+//   con ese error explícito, NO cae en silencio al flujo de imagen única.
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -21,8 +29,9 @@ const CORS_HEADERS = {
 const SUPABASE_URL = "https://uocwxwvcrnkfnnoyjzyb.supabase.co";
 const STORAGE_BUCKET = "content";
 const PUBLISH_DAYS = [0, 1, 3, 5]; // Sun, Mon, Wed, Fri
+const CAROUSEL_SLIDE_URL = `${SUPABASE_URL}/functions/v1/carousel-slide`;
 
-// ─── WASM + Font cache ────────────────────────────────────────────────────────
+// ─── WASM + Font cache ───────────────────────────────────────────────────────────
 
 let wasmReady = false;
 async function ensureWasm() {
@@ -53,18 +62,28 @@ interface GeneratedCopy {
   hook: string;
 }
 
+interface CarouselSlideSpec {
+  search_query: string;
+  kicker: string;
+  headline: string;
+}
+
+interface GeneratedCarousel {
+  caption: string;
+  hashtags: string;
+  slides: CarouselSlideSpec[];
+}
+
 // ─── validateEnv ─────────────────────────────────────────────────────────────
 
 function validateEnv(): void {
-  // SERVICE_ROLE_JWT = legacy JWT (formato eyJhbG...) requerido por Storage.
-  // Supabase inyecta el nuevo sb_secret_ en SUPABASE_SERVICE_ROLE_KEY pero Storage no lo acepta.
   const required = ["ANTHROPIC_API_KEY", "SERVICE_ROLE_JWT"];
   for (const v of required) {
     if (!Deno.env.get(v)) throw new Error(`Missing env: ${v}`);
   }
 }
 
-// ─── fetchIdea ────────────────────────────────────────────────────────────────
+// ─── fetchIdea ──────────────────────────────────────────────────────────────────
 
 async function fetchIdea(id: string, jwt: string): Promise<ContentIdea> {
   const res = await fetch(
@@ -76,10 +95,9 @@ async function fetchIdea(id: string, jwt: string): Promise<ContentIdea> {
   return rows[0];
 }
 
-// ─── generateCopy (Haiku) ────────────────────────────────────────────────────
+// ─── shared voice system prompt ───────────────────────────────────────────────
 
-async function generateCopy(idea: ContentIdea, anthropicKey: string): Promise<GeneratedCopy> {
-  const systemPrompt = `You are NOT a travel copywriter. You moved to Colombia 4 months ago.
+const VOICE_SYSTEM_PROMPT = `You are NOT a travel copywriter. You moved to Colombia 4 months ago.
 
 Write IG posts that read like a voice note you'd send your group chat. Not a brand. Not a tool. Someone who figured something out and is passing it along.
 
@@ -95,34 +113,28 @@ STRUCTURE RULES (no exceptions):
 - Start mid-observation. "Transmilenio to Chapinero is 2,950 pesos." Not "Getting around Bogotá just got easier."
 - No binary contrast openers. Not "Gringos pay $40. Locals pay $8."
 - No revelation setups. Not "I thought X. Turns out Y."
-- No list of 2-3 tips. That is a blog post format, not a caption.
-- No closing lesson, moral, or reframe. The caption stops when the observation stops.
+- No closing lesson, moral, or reframe.
 - No setup phrases: "Here's what most travelers miss", "What nobody tells you", "The thing about Colombia is".
 - No adverbs. Active voice. No exclamation marks. No emojis. No em dashes.
 - No: breathtaking, vibrant, bustling, hidden gem, paradise, must-see, discover, explore, stunning, rich culture, tapestry, world-class, game-changer, incredible, amazing, off the beaten path.
 
 INSTITUTIONS (no exceptions):
-Never claim or speculate why police, migración, government, or any institution acts a certain way. No corruption, no bribes, no "side deals," no motive attribution — even if the source material says so. You can describe what a visitor observes or needs to do (more foot traffic in a neighborhood, a form takes 15 minutes, a rotation schedule if it's public record) but never why an institution behaves that way. If the source material is one Reddit thread or blog post making a claim about an institution, drop that claim entirely and write around it. This is street-level intel for visitors, not institutional commentary.
+Never claim or speculate why police, migración, government, or any institution acts a certain way. No corruption, no bribes, no "side deals," no motive attribution — even if the source material says so. You can describe what a visitor observes or needs to do but never why an institution behaves that way. If the source material is one Reddit thread or blog post making a claim about an institution, drop that claim entirely and write around it. This is street-level intel for visitors, not institutional commentary.
 
 WHAT WORKS:
 - Specific COP amounts: 22,000 not "$5"
 - Real places: Parque de la 93, Laureles, Getsemaní, La Macarena, El Hueco, Chapinero, Zona G, La Candelaria, El Centro, Andrés DC, Parque Arví, Envigado, Bocagrande
 - Mixed sentence length. Short. Then one that takes its time and goes somewhere before it stops.
-- End with megusta.com.co — no CTA language, just the URL on its own line.
+- End with megusta.com.co — no CTA language, just the URL on its own line.`;
 
-For the image hook:
-- A specific fact, number, or scene. Not a contrast. Not a question. Not a reframe.
-- Something you'd text a friend at 11pm. "The Rappi driver gets there in 8 minutes."
-- Sounds like observation, not ad copy. Max 8 words.`;
+// ─── generateCopy (single image, unchanged) ───────────────────────────────────
 
+async function generateCopy(idea: ContentIdea, anthropicKey: string): Promise<GeneratedCopy> {
   const strategyNotes = idea.notes ? `\n\nStrategy context (use to shape angle, don't quote directly):\n${idea.notes}` : "";
-  const typeHint = idea.content_type === "carousel"
-    ? "This will be a 4-5 slide IG carousel. Write the caption as one continuous observation that makes someone want to swipe through the slides."
-    : "This will be a single IG image post.";
 
   const userPrompt = `Content idea from ${idea.origin}:
 "${idea.title}"
-${typeHint}${strategyNotes}
+This will be a single IG image post.${strategyNotes}
 
 Return ONLY valid JSON with exactly these 3 fields. Caption and hook in ENGLISH.
 {
@@ -141,7 +153,7 @@ Return ONLY valid JSON with exactly these 3 fields. Caption and hook in ENGLISH.
     body: JSON.stringify({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 900,
-      system: systemPrompt,
+      system: VOICE_SYSTEM_PROMPT,
       messages: [{ role: "user", content: userPrompt }],
     }),
   });
@@ -152,7 +164,6 @@ Return ONLY valid JSON with exactly these 3 fields. Caption and hook in ENGLISH.
   }
   const text: string = data.content[0].text;
 
-  // Extracción tolerante: Haiku a veces pone texto explicativo antes/después del JSON
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error(`No JSON in Haiku response: ${text.slice(0, 200)}`);
 
@@ -169,11 +180,99 @@ Return ONLY valid JSON with exactly these 3 fields. Caption and hook in ENGLISH.
   return parsed;
 }
 
-// ─── loadFonts (TTF, no WOFF2) + generateImage ───────────────────────────────
+// ─── generateCarouselCopy (Haiku, 4-5 slides) ─────────────────────────────────
+
+async function generateCarouselCopy(idea: ContentIdea, anthropicKey: string): Promise<GeneratedCarousel> {
+  const strategyNotes = idea.notes ? `\n\nStrategy context (use to shape angle, don't quote directly):\n${idea.notes}` : "";
+
+  const userPrompt = `Content idea from ${idea.origin}:
+"${idea.title}"
+This will be a 4-5 slide IG carousel with a REAL photo behind each slide (not an AI-generated background). Write it as a List or Steps structure (Content Unit framework): slide 1 is the hook/cover, slides 2 to N-1 each deliver ONE specific fact building on the last, the final slide closes.${strategyNotes}
+
+Return ONLY valid JSON with exactly these 3 fields:
+{
+  "caption": "IG caption in English, same voice rules as always. Can be shorter than a single-image post since the slides carry most of the specificity — 2-4 sentences that frame why someone should swipe, plus one added detail not in the slides. End with megusta.com.co on its own line.",
+  "hashtags": "#ColombiaTravel #MeGustaColombia #NoDarPapaya [8-12 specific hashtags]",
+  "slides": [
+    {
+      "search_query": "3-5 word English search query for a REAL stock photo that matches this slide (e.g. 'Cartagena colorful colonial street', 'Medellin metro station', 'Bogota Chapinero cafe'). Must be visually specific and photographable, not abstract.",
+      "kicker": "Small label above the headline, max 4 words, e.g. 'PLAZA SANTO DOMINGO' or 'WHERE LOCALS ACTUALLY EAT'",
+      "headline": "One specific fact or observation for this slide, max 14 words. No setup language, no adverbs, matches the voice rules."
+    }
+  ]
+}
+Exactly 4 or 5 slide objects in the array, in the order they should appear.`;
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": anthropicKey,
+      "anthropic-version": "2023-06-01",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 1400,
+      system: VOICE_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userPrompt }],
+    }),
+  });
+
+  const data = await res.json();
+  if (!data.content || !data.content[0]) {
+    throw new Error(`Haiku API error: ${JSON.stringify(data).slice(0, 300)}`);
+  }
+  const text: string = data.content[0].text;
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error(`No JSON in Haiku response: ${text.slice(0, 200)}`);
+
+  let parsed: GeneratedCarousel;
+  try {
+    parsed = JSON.parse(jsonMatch[0]);
+  } catch (_) {
+    throw new Error(`Haiku response not valid JSON: ${text.slice(0, 200)}`);
+  }
+
+  if (!Array.isArray(parsed.slides) || parsed.slides.length < 2) {
+    throw new Error(`Haiku returned ${parsed.slides?.length ?? 0} slides, need at least 2`);
+  }
+  if (parsed.caption && parsed.caption.length > 2200) {
+    parsed.caption = parsed.caption.slice(0, 2200);
+  }
+  return parsed;
+}
+
+// ─── Pexels photo search ───────────────────────────────────────────────────────
+
+interface PexelsPhoto {
+  src: { large: string; portrait: string };
+}
+
+async function searchPexelsPhoto(query: string, pexelsKey: string): Promise<string> {
+  const res = await fetch(
+    `https://api.pexels.com/v1/search?query=${encodeURIComponent(query + " Colombia")}&per_page=3&orientation=portrait`,
+    { headers: { Authorization: pexelsKey } }
+  );
+  if (!res.ok) throw new Error(`Pexels search failed: ${res.status} ${await res.text()}`);
+  const data = await res.json();
+  const photos: PexelsPhoto[] = data.photos ?? [];
+  if (photos.length === 0) throw new Error(`No Pexels results for query: ${query}`);
+  // Pedimos versión comprimida/liviana para no repetir el WORKER_RESOURCE_LIMIT del piloto.
+  const base = photos[0].src.portrait || photos[0].src.large;
+  const url = new URL(base);
+  url.searchParams.set("auto", "compress");
+  url.searchParams.set("cs", "tinysrgb");
+  url.searchParams.set("w", "1080");
+  url.searchParams.set("h", "1350");
+  url.searchParams.set("fit", "crop");
+  return url.toString();
+}
+
+// ─── loadFonts (TTF, no WOFF2) + generateImage (single-image path, unchanged) ─
 
 async function loadFonts() {
   if (cachedFonts) return cachedFonts;
-  // Noto Sans TTF — satori NO soporta WOFF2.
   const base = "https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoSans";
   const [bold, black] = await Promise.all([
     fetch(`${base}/NotoSans-Bold.ttf`).then((r) => r.arrayBuffer()),
@@ -216,7 +315,7 @@ async function generateImage(hook: string, origin: string, score: number): Promi
   return resvg.render().asPng();
 }
 
-// ─── uploadToStorage / nextPublishDate / insert / mark ───────────────────────
+// ─── uploadToStorage / nextPublishDate ─────────────────────────────────────────
 
 async function uploadToStorage(png: Uint8Array, fileName: string, jwt: string): Promise<void> {
   const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/posts/${fileName}`, {
@@ -235,8 +334,6 @@ async function nextPublishDate(jwt: string): Promise<string> {
   const rows: Array<{ publish_date: string }> = await res.json();
   const lastDate = rows[0]?.publish_date ? new Date(rows[0].publish_date + "T00:00:00Z") : new Date();
   const today = new Date();
-  // Tomar el MÁS RECIENTE entre el último publish_date y hoy
-  // (evita que un queue con fechas viejas siga generando posts en el pasado)
   const base = lastDate > today ? lastDate : today;
   base.setUTCDate(base.getUTCDate() + 1);
   while (!PUBLISH_DAYS.includes(base.getUTCDay())) {
@@ -244,6 +341,8 @@ async function nextPublishDate(jwt: string): Promise<string> {
   }
   return base.toISOString().split("T")[0];
 }
+
+// ─── insertToQueue (single image, unchanged) + insertCarouselToQueue ──────────
 
 async function insertToQueue(idea: ContentIdea, copy: GeneratedCopy, imageFile: string, publishDate: string, jwt: string): Promise<void> {
   const queueId = `idea-${idea.id.slice(0, 12)}`;
@@ -264,11 +363,31 @@ async function insertToQueue(idea: ContentIdea, copy: GeneratedCopy, imageFile: 
   if (!res.ok) throw new Error(`insertToQueue failed: ${res.status} ${await res.text()}`);
 }
 
-async function markIdeaProcessed(id: string, copy: GeneratedCopy, jwt: string): Promise<void> {
+async function insertCarouselToQueue(idea: ContentIdea, copy: GeneratedCarousel, imageFiles: string[], publishDate: string, jwt: string): Promise<void> {
+  const queueId = `idea-${idea.id.slice(0, 12)}`;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/content_queue`, {
+    method: "POST",
+    headers: { apikey: jwt, Authorization: `Bearer ${jwt}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({
+      id: queueId,
+      day: 0,
+      publish_date: publishDate,
+      platforms: ["instagram"],
+      type: "carousel",
+      image_file: null,
+      image_files: imageFiles,
+      caption: copy.caption + "\n\n" + copy.hashtags,
+      published: false,
+    }),
+  });
+  if (!res.ok) throw new Error(`insertCarouselToQueue failed: ${res.status} ${await res.text()}`);
+}
+
+async function markIdeaProcessed(id: string, copyText: string, hashtags: string, jwt: string): Promise<void> {
   await fetch(`${SUPABASE_URL}/rest/v1/content_ideas?id=eq.${id}`, {
     method: "PATCH",
     headers: { apikey: jwt, Authorization: `Bearer ${jwt}`, "Content-Type": "application/json", Prefer: "return=minimal" },
-    body: JSON.stringify({ generated_copy: copy.caption, generated_hashtags: copy.hashtags, status: "in_progress", used_at: new Date().toISOString() }),
+    body: JSON.stringify({ generated_copy: copyText, generated_hashtags: hashtags, status: "in_progress", used_at: new Date().toISOString() }),
   });
 }
 
@@ -278,6 +397,37 @@ async function markIdeaFailed(id: string, error: Error, jwt: string): Promise<vo
     headers: { apikey: jwt, Authorization: `Bearer ${jwt}`, "Content-Type": "application/json", Prefer: "return=minimal" },
     body: JSON.stringify({ notes: `[ERROR ${new Date().toISOString()}] ${error.message.slice(0, 400)}` }),
   });
+}
+
+// ─── Carousel orchestration ─────────────────────────────────────────────────────
+
+async function generateCarouselSlideImages(ideaId: string, slides: CarouselSlideSpec[], pexelsKey: string): Promise<string[]> {
+  const total = slides.length;
+  const filenames: string[] = [];
+  for (let i = 0; i < slides.length; i++) {
+    const slide = slides[i];
+    const photoUrl = await searchPexelsPhoto(slide.search_query, pexelsKey);
+    const filename = `idea-${ideaId.slice(0, 12)}-${i + 1}.png`;
+    const res = await fetch(CAROUSEL_SLIDE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slides: [{
+          photo_url: photoUrl,
+          kicker: slide.kicker,
+          headline: slide.headline,
+          slide_number: i + 1,
+          total_slides: total,
+          filename,
+          variant: i === 0 ? "cover" : i === slides.length - 1 ? "close" : "content",
+        }],
+      }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(`carousel-slide failed on slide ${i + 1}: ${data.error}`);
+    filenames.push(filename);
+  }
+  return filenames;
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -297,14 +447,27 @@ Deno.serve(async (req: Request) => {
     if (idea.generated_copy) {
       return new Response(JSON.stringify({ ok: true, skipped: true }), { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
     }
+
+    if (idea.content_type === "carousel") {
+      const pexelsKey = Deno.env.get("PEXELS_API_KEY");
+      if (!pexelsKey) throw new Error("Missing env: PEXELS_API_KEY (required for content_type=carousel)");
+
+      const copy = await generateCarouselCopy(idea, anthropicKey);
+      const imageFiles = await generateCarouselSlideImages(idea.id, copy.slides, pexelsKey);
+      const publishDate = await nextPublishDate(jwt);
+      await insertCarouselToQueue(idea, copy, imageFiles, publishDate, jwt);
+      await markIdeaProcessed(ideaId, copy.caption, copy.hashtags, jwt);
+      return new Response(JSON.stringify({ ok: true, type: "carousel", publish_date: publishDate, slides: imageFiles.length }), { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
+    }
+
     const copy = await generateCopy(idea, anthropicKey);
     const png = await generateImage(copy.hook, idea.origin, idea.score);
     const imageFile = `idea-${idea.id.slice(0, 12)}.png`;
     await uploadToStorage(png, imageFile, jwt);
     const publishDate = await nextPublishDate(jwt);
     await insertToQueue(idea, copy, imageFile, publishDate, jwt);
-    await markIdeaProcessed(ideaId, copy, jwt);
-    return new Response(JSON.stringify({ ok: true, publish_date: publishDate, image: imageFile, hook: copy.hook }), { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
+    await markIdeaProcessed(ideaId, copy.caption, copy.hashtags, jwt);
+    return new Response(JSON.stringify({ ok: true, type: "image", publish_date: publishDate, image: imageFile, hook: copy.hook }), { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
   } catch (err) {
     const error = err instanceof Error ? err : new Error(String(err));
     if (ideaId && jwt) {
