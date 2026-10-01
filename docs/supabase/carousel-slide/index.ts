@@ -3,10 +3,12 @@ import satori from "npm:satori@0.11.2";
 import { initWasm, Resvg } from "npm:@resvg/resvg-wasm@2.4.1";
 
 // carousel-slide — genera 1 slide de carrusel: foto real royalty-free de fondo
-// (pasada por el caller, esta función no busca fotos) + overlay oscuro/dorado
-// de marca + kicker + headline + contador de slide. Usada por idea-to-queue
-// (automático, con búsqueda en Pexels) y también invocable directo con una
-// photo_url manual para carruseles armados a mano.
+// (pasada por el caller, esta función no busca fotos) + degradado inferior solo
+// para legibilidad + titular. Sin eyebrow/kicker, sin contador, sin regla dorada
+// (prohibidos por impeccable craft-floor: un kicker sobre el titular es una
+// prohibición absoluta, y Instagram ya muestra los puntos del carrusel).
+// Usada por idea-to-queue (automático, con búsqueda en Pexels) y también
+// invocable directo con una photo_url manual.
 //
 // Formato: 1080x1350 (4:5, estándar de carrusel IG). Sube a
 // content/carousels/{filename} en Supabase Storage.
@@ -36,18 +38,11 @@ async function ensureWasm() {
   }
 }
 
-let cachedFonts: Array<{ name: string; weight: 700 | 900; style: "normal"; data: ArrayBuffer }> | null = null;
+let cachedFonts: Array<{ name: string; weight: 400; style: "normal"; data: ArrayBuffer }> | null = null;
 async function loadFonts() {
   if (cachedFonts) return cachedFonts;
-  const base = "https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoSans";
-  const [bold, black] = await Promise.all([
-    fetch(`${base}/NotoSans-Bold.ttf`).then((r) => r.arrayBuffer()),
-    fetch(`${base}/NotoSans-Black.ttf`).then((r) => r.arrayBuffer()),
-  ]);
-  cachedFonts = [
-    { name: "NotoSans", weight: 700, style: "normal", data: bold },
-    { name: "NotoSans", weight: 900, style: "normal", data: black },
-  ];
+  const data = await fetch("https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/dmserifdisplay/DMSerifDisplay-Regular.ttf").then((r) => r.arrayBuffer());
+  cachedFonts = [{ name: "DMSerifDisplay", weight: 400, style: "normal", data }];
   return cachedFonts;
 }
 
@@ -71,7 +66,7 @@ async function photoToDataUri(url: string): Promise<string> {
 
 interface SlideInput {
   photo_url: string;
-  kicker: string;
+  kicker?: string; // ignorado, se mantiene por compatibilidad con llamadas viejas
   headline: string;
   slide_number: number;
   total_slides: number;
@@ -84,14 +79,19 @@ async function generateSlide(input: SlideInput): Promise<Uint8Array> {
   const fonts = await loadFonts();
   const photoDataUri = await photoToDataUri(input.photo_url);
 
-  const headlineSize = input.headline.length > 90 ? 44 : input.headline.length > 55 ? 52 : 64;
-  const overlayOpacity = input.variant === "cover" ? 0.55 : 0.68;
+  const isCover = input.variant === "cover";
+  const len = input.headline.length;
+  const headlineSize = isCover
+    ? (len > 80 ? 68 : len > 50 ? 76 : 88)
+    : (len > 90 ? 56 : len > 60 ? 64 : 72);
 
+  // Degradado solo en el tercio inferior: lo justo para contraste del titular
+  // (>=4.5:1), sin apagar la foto entera.
   const svg = await satori(
     {
       type: "div",
       props: {
-        style: { width: W, height: H, position: "relative", display: "flex", fontFamily: "NotoSans" },
+        style: { width: W, height: H, position: "relative", display: "flex", fontFamily: "DMSerifDisplay" },
         children: [
           { type: "img", props: { src: photoDataUri, width: W, height: H, style: { position: "absolute", top: 0, left: 0, objectFit: "cover" } } },
           {
@@ -99,33 +99,16 @@ async function generateSlide(input: SlideInput): Promise<Uint8Array> {
             props: {
               style: {
                 position: "absolute", top: 0, left: 0, width: W, height: H,
-                background: `linear-gradient(180deg, rgba(10,10,10,${overlayOpacity * 0.55}) 0%, rgba(10,10,10,${overlayOpacity * 0.35}) 35%, rgba(10,10,10,${overlayOpacity}) 68%, rgba(10,10,10,${Math.min(overlayOpacity + 0.2, 0.94)}) 100%)`,
+                background: "linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,0) 42%, rgba(10,10,10,0.62) 70%, rgba(10,10,10,0.9) 100%)",
               },
             },
           },
           {
             type: "div",
             props: {
-              style: {
-                position: "absolute", top: 56, left: 56, right: 56,
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-              },
+              style: { position: "absolute", left: 64, right: 64, bottom: 80, display: "flex" },
               children: [
-                { type: "span", props: { style: { fontFamily: "NotoSans", fontSize: 20, fontWeight: 700, letterSpacing: 4, color: "#d4a843", textTransform: "uppercase" }, children: input.kicker } },
-                { type: "span", props: { style: { fontFamily: "NotoSans", fontSize: 20, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.65)" }, children: `${input.slide_number}/${input.total_slides}` } },
-              ],
-            },
-          },
-          {
-            type: "div",
-            props: {
-              style: {
-                position: "absolute", left: 56, right: 56, bottom: 72,
-                display: "flex", flexDirection: "column",
-              },
-              children: [
-                { type: "div", props: { style: { width: 90, height: 4, background: "#d4a843", marginBottom: 28 } } },
-                { type: "h1", props: { style: { margin: 0, fontFamily: "NotoSans", fontSize: headlineSize, fontWeight: 900, lineHeight: 1.2, color: "#ffffff" }, children: input.headline } },
+                { type: "h1", props: { style: { margin: 0, fontFamily: "DMSerifDisplay", fontSize: headlineSize, fontWeight: 400, lineHeight: 1.12, letterSpacing: -1, color: "#ffffff" }, children: input.headline } },
               ],
             },
           },
