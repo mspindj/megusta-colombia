@@ -808,9 +808,20 @@ curl -X POST "https://graph.facebook.com/v21.0/1068628786330276/photos" \
 
 36. **Brevo duplica templates cuando se editan/duplican dentro del editor de Automation.** Al modificar un paso del automation, Brevo a veces crea una copia nueva con otro ID en vez de editar el original in-place — el template viejo queda huérfano (ya no lo usa el automation) pero sigue existiendo y sigue siendo editable vía API, lo cual engaña: parece que el fix se aplicó porque el PUT/la edición funcionó, pero el automation real sigue mandando la versión vieja sin el fix. Pasó al menos 2 veces (25 Jun, 3 Jul) con los fixes de "PS de venta" y de links de Gumroad. **Cómo verificar cuál template es el que de verdad se envía:** no confiar en el nombre/ID documentado en jornadas anteriores — pedir el reporte de eventos `delivered` de los últimos 60-90 días, agrupar por `templateId` y por contacto, y calcular el delta de días entre el primer email y cada envío posterior. El template con el delta que coincide con el día esperado (ej. "día 8") es el que está vivo. Antes de dar cualquier fix por aplicado, confirmar contra ese mapeo real, no contra el nombre del template.
 
+## Carruseles de IG: pipeline vigente (desde 29 sep 2026)
+
+- **Slide:** foto + titular en serif (`carousel-slide`). Prohibido eyebrow/kicker, contador, regla dorada y texto con degradado (impeccable `craft-floor.md`).
+- **Cifras:** toda cifra sale de `VERIFIED_FACTS` en `idea-to-queue`, con fuente y fecha. El modelo inventa precios y se contradicen entre posts. Una cifra fuera de la lista hace fallar la idea, a la vista. Reverificar la lista cuando cambien las tarifas (cada enero como mínimo).
+- **Caption:** lo arma el código: gancho + descripción + `content_ideas.cta_line` (verbatim) + `megusta.com.co` + hashtags. El modelo ignoraba la instrucción de cerrar con la URL.
+- **Fotos:** el `alt` de Pexels debe nombrar Colombia o un lugar colombiano; los objetos genéricos se quitan del query. Aun así, mirar los slides (contact sheet) antes de que salgan: el generador falla en fotos y en lugares.
+- **Fallos de generación:** quedan en `content_ideas.last_error`, nunca en `notes`.
+- **Regenerar un post:** borrar su fila de `content_queue` (si no se ha publicado), poner `generated_copy = null` y llamar `POST /functions/v1/idea-to-queue {idea_id}`. Sin colisión de fechas si se hace de a uno.
+- **Deploy de Edge Functions:** MCP `deploy_edge_function`, o `supabase functions deploy <fn> --use-api --no-verify-jwt` con `SUPABASE_ACCESS_TOKEN` de `.mcp.json`. El MCP da `fetch failed` de forma intermitente: reintentar.
+- **`score` de `content_ideas` no es engagement:** es la posición en Google. No ordenar por él para decidir qué funciona.
+
 ## Credenciales
 Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
 NO guardar credenciales en este archivo ni en archivos commiteados.
 
 ---
-*Última actualización: 21 Ago 2026*
+*Última actualización: 29 Sep 2026*
