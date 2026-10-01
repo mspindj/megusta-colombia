@@ -36,6 +36,7 @@ colombiano funciona: "listo", "chévere" (con moderación), "te queda funcionand
 
 ### Frontend — Next.js workflow
 - Claude Code edita directamente `src/` — push a main = deploy automático en Vercel
+- El hook global bloquea commits de agentes a `main`: trabajar en rama y abrir PR (`gh pr create`). Push de la rama no despliega; el merge a `main` sí. No usar `PIPELINE_HOOK_FORCE=1` sin que Miguel lo pida.
 - Lovable ya NO se usa para este proyecto (migrado 2026-05-22)
 - `colombia-intel-hub` (repo de Lovable) borrado — toda la lógica está en este repo
 
