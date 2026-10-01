@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Terms of Service — Me Gusta Colombia",
+  title: "Terms of Service | Me Gusta Colombia",
   description: "Terms of Service for Me Gusta Colombia",
 };
 
@@ -27,12 +27,12 @@ export default function TermsPage() {
 
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-white mb-3">4. Intellectual property</h2>
-          <p>All content on megusta.com.co — including guides, text, and images — is owned by Me Gusta Colombia. You may not reproduce or redistribute our content without written permission.</p>
+          <p>All content on megusta.com.co, including guides, text, and images, is owned by Me Gusta Colombia. You may not reproduce or redistribute our content without written permission.</p>
         </section>
 
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-white mb-3">5. Disclaimer</h2>
-          <p>Travel involves inherent risks. Our guides provide general information and are not a substitute for professional advice. Safety conditions in Colombia change — always verify current information with local authorities and your government&apos;s travel advisory.</p>
+          <p>Travel involves inherent risks. Our guides provide general information and are not a substitute for professional advice. Safety conditions in Colombia change, so always verify current information with local authorities and your government&apos;s travel advisory.</p>
         </section>
 
         <section className="mb-8">

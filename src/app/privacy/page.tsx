@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Privacy Policy — Me Gusta Colombia",
+  title: "Privacy Policy | Me Gusta Colombia",
   description: "Privacy Policy for Me Gusta Colombia",
 };
 
@@ -18,9 +18,9 @@ export default function PrivacyPage() {
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-white mb-3">2. Information we collect</h2>
           <ul className="list-disc pl-5 space-y-2">
-            <li><strong className="text-white">Email address</strong> — when you subscribe to our free guide or newsletter.</li>
-            <li><strong className="text-white">Usage data</strong> — pages visited, time on site, via Meta Pixel and analytics tools.</li>
-            <li><strong className="text-white">Transaction data</strong> — purchase records if you buy a city guide via Gumroad (processed by Gumroad, not stored by us).</li>
+            <li><strong className="text-white">Email address</strong>: when you subscribe to our free guide or newsletter.</li>
+            <li><strong className="text-white">Usage data</strong>: pages visited, time on site, via Meta Pixel and analytics tools.</li>
+            <li><strong className="text-white">Transaction data</strong>: purchase records if you buy a city guide via Gumroad (processed by Gumroad, not stored by us).</li>
           </ul>
         </section>
 
@@ -43,10 +43,10 @@ export default function PrivacyPage() {
           <h2 className="text-lg font-semibold text-white mb-3">5. Data sharing</h2>
           <p>We do not sell your personal data. We share data only with:</p>
           <ul className="list-disc pl-5 space-y-2 mt-2">
-            <li><strong className="text-white">Brevo</strong> — email delivery service.</li>
-            <li><strong className="text-white">Supabase</strong> — database and backend infrastructure.</li>
-            <li><strong className="text-white">Meta Platforms</strong> — for advertising measurement.</li>
-            <li><strong className="text-white">Vercel</strong> — website hosting.</li>
+            <li><strong className="text-white">Brevo</strong>: email delivery service.</li>
+            <li><strong className="text-white">Supabase</strong>: database and backend infrastructure.</li>
+            <li><strong className="text-white">Meta Platforms</strong>: for advertising measurement.</li>
+            <li><strong className="text-white">Vercel</strong>: website hosting.</li>
           </ul>
         </section>
 

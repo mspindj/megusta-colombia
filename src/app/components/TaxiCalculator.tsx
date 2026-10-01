@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Info } from "lucide-react";
 import {
   TAXI_ROUTES,
   CIUDAD_CONFIG,
@@ -144,7 +145,7 @@ export function TaxiCalculator({ ciudad, setCiudad, onCapture }: TaxiCalculatorP
             {/* Note */}
             {selectedRoute.nota && (
               <div className="rounded-lg bg-[#1a1a1a] p-3 flex gap-2">
-                <span className="text-sm shrink-0">ℹ️</span>
+                <Info className="size-4 shrink-0 mt-0.5 text-[#aaaaaa]" aria-hidden="true" />
                 <p className="text-sm text-[#aaaaaa]">{selectedRoute.nota}</p>
               </div>
             )}

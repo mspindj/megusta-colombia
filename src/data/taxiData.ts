@@ -17,7 +17,7 @@ export const TAXI_ROUTES: TaxiRoute[] = [
     destino: "Zona Rosa / Usaquén",
     precioJusto: { min: 25000, max: 35000, moneda: "COP" },
     precioTurista: { min: 80000, max: 120000, moneda: "COP" },
-    nota: "Acordá el precio ANTES de subir. Nunca aceptes el primer número.",
+    nota: "Acuerda el precio ANTES de subir. Nunca aceptes el primer número.",
   },
   {
     id: "bog-candelaria-chapinero",
@@ -35,7 +35,7 @@ export const TAXI_ROUTES: TaxiRoute[] = [
     destino: "Usaquén",
     precioJusto: { min: 10000, max: 15000, moneda: "COP" },
     precioTurista: { min: 30000, max: 45000, moneda: "COP" },
-    nota: "Trayecto corto. Si te cobran más de $15.000, bajate y pedí otro.",
+    nota: "Trayecto corto. Si te cobran más de $15.000, bájate y pide otro.",
   },
   // MEDELLÍN
   {
@@ -45,7 +45,7 @@ export const TAXI_ROUTES: TaxiRoute[] = [
     destino: "El Poblado",
     precioJusto: { min: 45000, max: 60000, moneda: "COP" },
     precioTurista: { min: 120000, max: 180000, moneda: "COP" },
-    nota: "45 min de autopista. El Uber Plus negro pide $90.000 — igual es la opción más segura.",
+    nota: "45 min de autopista. El Uber Plus negro pide $90.000, pero igual es la opción más segura.",
   },
   {
     id: "med-centro-poblado",
@@ -54,7 +54,7 @@ export const TAXI_ROUTES: TaxiRoute[] = [
     destino: "El Poblado",
     precioJusto: { min: 8000, max: 12000, moneda: "COP" },
     precioTurista: { min: 28000, max: 40000, moneda: "COP" },
-    nota: "El Metro llega al mismo destino por $3.500. Si tomás taxi, usá Uber.",
+    nota: "El Metro llega al mismo destino por $3.500. Si tomas taxi, usa Uber.",
   },
   {
     id: "med-poblado-laureles",
@@ -82,7 +82,7 @@ export const TAXI_ROUTES: TaxiRoute[] = [
     destino: "Centro Histórico",
     precioJusto: { min: 4000, max: 6000, moneda: "COP" },
     precioTurista: { min: 15000, max: 20000, moneda: "COP" },
-    nota: "Son 10 minutos caminando. Si el taxista dice $15.000 — caminá.",
+    nota: "Son 10 minutos caminando. Si el taxista dice $15.000, camina.",
   },
 ]
 

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Me Gusta Colombia | 72-Hour Survival Intel for First-Time Travelers",
   description:
-    "Tourists get scammed, overpay, and waste their first 3 days. You won't. Tactical local intelligence for Bogotá, Medellín & Cartagena — $17 per city.",
+    "Tourists get scammed, overpay, and waste their first 3 days. You won't. Tactical local intelligence for Bogotá, Medellín & Cartagena. $17 per city.",
   keywords: [
     "Colombia travel guide",
     "Bogota first time",

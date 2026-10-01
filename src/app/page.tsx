@@ -371,7 +371,7 @@ export default function Home() {
           {/* PRIMARY CTA: Lead magnet form with PDF preview */}
           <motion.div variants={heroChildVariants} className="mb-4">
             <p className="font-mono text-xs text-primary/80 tracking-[0.2em] uppercase mb-4 text-center">
-              Free Briefing — Colombia Arrival Intel
+              Free Briefing: Colombia Arrival Intel
             </p>
 
             {leadStatus === "success" ? (
@@ -383,7 +383,7 @@ export default function Home() {
               >
                 <span className="text-primary text-3xl">✓</span>
                 <p className="text-foreground font-semibold mt-1">
-                  Check your inbox — intel incoming.
+                  Check your inbox. Intel incoming.
                 </p>
                 <p className="text-xs text-white/50 mt-2 font-mono">
                   Look for a message from hola@megusta.com.co (check spam if needed)
@@ -585,7 +585,7 @@ export default function Home() {
               </h3>
               <ul className="space-y-4">
                 {[
-                  "Takes the $8 official taxi — knows the exact counter location",
+                  "Takes the $8 official taxi and knows the exact counter location",
                   "Navigates like a local from hour one",
                   "Eats where locals eat at local prices",
                   "Knows exactly which zones are safe for nightlife",
@@ -599,7 +599,7 @@ export default function Home() {
                 ))}
               </ul>
               <p className="mt-6 text-xs text-primary/80 font-mono">
-                Cost of preparation: $17 — less than that overpriced taxi ride
+                Cost of preparation: $17. Less than that overpriced taxi ride
               </p>
             </motion.div>
           </div>
@@ -692,7 +692,7 @@ export default function Home() {
                   >
                     <span className="text-primary text-2xl">✓</span>
                     <p className="text-foreground font-semibold mt-2">
-                      Check your inbox — intel incoming.
+                      Check your inbox. Intel incoming.
                     </p>
                   </motion.div>
                 ) : (
@@ -830,7 +830,7 @@ export default function Home() {
                         className="w-full font-mono tracking-wider text-sm"
                         size="sm"
                       >
-                        GET INTEL — {city.price}
+                        GET INTEL: {city.price}
                       </Button>
                     </a>
                   ) : (
@@ -901,7 +901,7 @@ export default function Home() {
             </motion.span>
           </div>
           <p className="text-muted-foreground text-sm mb-8">
-            Bogotá + Medellín + Cartagena — everything you need before you land.
+            Bogotá + Medellín + Cartagena: everything you need before you land.
           </p>
           <a
             href="https://megustacomco.gumroad.com/l/explorer-bundle"
@@ -985,7 +985,7 @@ export default function Home() {
               className="font-mono tracking-wider text-sm"
               onClick={scrollToCity}
             >
-              GET YOUR CITY FILE — $17
+              GET YOUR CITY FILE: $17
             </Button>
             <a
               href="https://megustacomco.gumroad.com/l/explorer-bundle"
@@ -993,7 +993,7 @@ export default function Home() {
               rel="noopener noreferrer"
               className={buttonVariants({ variant: "outline", size: "lg", className: "font-mono tracking-wider text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground" })}
             >
-              EXPLORER BUNDLE — $37
+              EXPLORER BUNDLE: $37
             </a>
           </div>
           <p className="text-muted-foreground text-xs font-mono">

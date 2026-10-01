@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Data Deletion — Me Gusta Colombia",
+  title: "Data Deletion | Me Gusta Colombia",
   description: "How to request deletion of your data from Me Gusta Colombia",
 };
 
