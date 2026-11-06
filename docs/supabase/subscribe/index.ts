@@ -55,7 +55,8 @@ async function sendLeadNotification(
   email: string,
   sourceUrl: string,
   userAgent: string,
-  brevoApiKey: string
+  brevoApiKey: string,
+  attributes: Record<string, string> = {},
 ): Promise<void> {
   const timestamp = new Date().toISOString();
   const colombiaTime = new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" });
@@ -71,6 +72,7 @@ async function sendLeadNotification(
         <tr><td style="color:#888; padding:6px 12px 6px 0; vertical-align:top;">Hora (COL)</td><td style="color:#fff; padding:6px 0;">${colombiaTime}</td></tr>
         <tr><td style="color:#888; padding:6px 12px 6px 0; vertical-align:top;">UTC</td><td style="color:#fff; padding:6px 0;">${timestamp}</td></tr>
         <tr><td style="color:#888; padding:6px 12px 6px 0; vertical-align:top;">Source URL</td><td style="color:#fff; padding:6px 0; word-break:break-all;">${sourceUrl}</td></tr>
+        ${Object.entries(attributes).map(([k, v]) => `<tr><td style="color:#888; padding:6px 12px 6px 0; vertical-align:top;">${k}</td><td style="color:#d4a843; padding:6px 0;">${v}</td></tr>`).join("")}
         <tr><td style="color:#888; padding:6px 12px 6px 0; vertical-align:top;">User Agent</td><td style="color:#aaa; padding:6px 0; font-size:11px; word-break:break-all;">${userAgent}</td></tr>
       </table>
       <p style="color:#666; font-size:11px; margin-top:24px; font-family:monospace;">Sent automatically by /functions/v1/subscribe</p>
@@ -100,6 +102,31 @@ async function sendLeadNotification(
   } else {
     console.log("Lead notification email sent for", email);
   }
+}
+
+// Respuestas del quiz de /quiz. Solo valores conocidos: lo que llega del navegador
+// no se guarda tal cual en Brevo.
+const QUIZ_ALLOWED: Record<string, string[]> = {
+  profile: ["shoestring", "glam", "classic", "topshelf"],
+  city: ["bogota", "medellin", "cartagena", "several"],
+  length: ["weekend", "week", "weeks", "month"],
+  budget: ["u40", "40-100", "100-250", "250plus"],
+};
+const QUIZ_ATTRIBUTE: Record<string, string> = {
+  profile: "TRAVELER_PROFILE",
+  city: "QUIZ_CITY",
+  length: "QUIZ_TRIP_LENGTH",
+  budget: "QUIZ_BUDGET",
+};
+
+function quizAttributes(quiz: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!quiz || typeof quiz !== "object") return out;
+  for (const [key, allowed] of Object.entries(QUIZ_ALLOWED)) {
+    const value = (quiz as Record<string, unknown>)[key];
+    if (typeof value === "string" && allowed.includes(value)) out[QUIZ_ATTRIBUTE[key]] = value;
+  }
+  return out;
 }
 
 async function contactAlreadyInList(
@@ -134,7 +161,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { email, event_id } = await req.json();
+    const { email, event_id, quiz } = await req.json();
+    const attributes = quizAttributes(quiz);
     const eventId: string = event_id || crypto.randomUUID();
 
     if (!email || !email.includes("@")) {
@@ -172,6 +200,7 @@ Deno.serve(async (req: Request) => {
         email,
         listIds: [3],
         updateEnabled: true,
+        ...(Object.keys(attributes).length ? { attributes } : {}),
       }),
     });
 
@@ -194,7 +223,7 @@ Deno.serve(async (req: Request) => {
 
     if (!isDuplicate) {
       // Notificación a hola@megusta.com.co — fire-and-forget
-      sendLeadNotification(email, sourceUrl, userAgent, BREVO_API_KEY).catch(err =>
+      sendLeadNotification(email, sourceUrl, userAgent, BREVO_API_KEY, attributes).catch(err =>
         console.error("Lead notification error (non-blocking):", err)
       );
 
