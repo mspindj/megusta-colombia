@@ -819,6 +819,7 @@ curl -X POST "https://graph.facebook.com/v21.0/1068628786330276/photos" \
 - **Regenerar un post:** borrar su fila de `content_queue` (si no se ha publicado), poner `generated_copy = null` y llamar `POST /functions/v1/idea-to-queue {idea_id}`. Sin colisión de fechas si se hace de a uno.
 - **Deploy de Edge Functions:** MCP `deploy_edge_function`, o `supabase functions deploy <fn> --use-api --no-verify-jwt` con `SUPABASE_ACCESS_TOKEN` de `.mcp.json`. El MCP da `fetch failed` de forma intermitente: reintentar.
 - **`score` de `content_ideas` no es engagement:** es la posición en Google. No ordenar por él para decidir qué funciona.
+- **Llenar la cola es trabajo recurrente, no automático:** la cola se vació en septiembre, octubre y noviembre. Revisar `content_queue` a más tardar el 20 de cada mes y llenar el siguiente. El pool de `intel-gather` trae mucha basura con score alto; escribir las ideas a mano en `content_ideas` con `notes` (qué cifras se pueden usar, qué no afirmar) y `cta_line`.
 
 ## Credenciales
 Todas en Notion: https://www.notion.so/337e9543180181c4a2ace9189e2e16fe
