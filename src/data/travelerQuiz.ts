@@ -19,7 +19,7 @@ export interface QuizOption {
 }
 
 export interface QuizQuestion {
-  id: "city" | "length" | "sleep" | "evening" | "move" | "budget";
+  id: "city" | "purpose" | "length" | "sleep" | "evening" | "move" | "budget";
   question: string;
   options: QuizOption[];
 }
@@ -33,6 +33,17 @@ export const QUESTIONS: QuizQuestion[] = [
       { label: "Medellín", value: "medellin" },
       { label: "Cartagena", value: "cartagena" },
       { label: "More than one city, or not sure yet", value: "several" },
+    ],
+  },
+  {
+    id: "purpose",
+    question: "What brings you to Colombia?",
+    options: [
+      { label: "Vacation", value: "vacation" },
+      { label: "Working remotely", value: "remote" },
+      { label: "Moving here, or staying a few months", value: "moving" },
+      { label: "Visiting family, a partner or friends", value: "family" },
+      { label: "Business trip", value: "business" },
     ],
   },
   {
@@ -192,3 +203,13 @@ export function orderedMoves(profile: Profile, city?: string): string[] {
   const first = profile.moves.filter((m) => m.startsWith(prefix));
   return [...first, ...profile.moves.filter((m) => !m.startsWith(prefix))];
 }
+
+// Una línea extra según el tipo de viaje. No cambia el perfil: se puede ser
+// Glam Backpacker de vacaciones o trabajando en remoto.
+export const PURPOSE_LINES: Record<string, string> = {
+  vacation: "On vacation: two or three days per city works better than squeezing in one more stop.",
+  remote: "Working remotely: pick a walkable neighborhood as your base and test the Wi-Fi on day one before you commit to a long stay.",
+  moving: "Staying a few months: the frequent-rider transit fares and a neighborhood you can walk matter more than any single sight.",
+  family: "Visiting people you know: ask them which apps they use at night and which blocks they skip.",
+  business: "On a business trip: book your airport transfer before you land and keep your evenings close to where you stay.",
+};

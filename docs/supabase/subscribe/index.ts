@@ -109,12 +109,14 @@ async function sendLeadNotification(
 const QUIZ_ALLOWED: Record<string, string[]> = {
   profile: ["shoestring", "glam", "classic", "topshelf"],
   city: ["bogota", "medellin", "cartagena", "several"],
+  purpose: ["vacation", "remote", "moving", "family", "business"],
   length: ["weekend", "week", "weeks", "month"],
   budget: ["u40", "40-100", "100-250", "250plus"],
 };
 const QUIZ_ATTRIBUTE: Record<string, string> = {
   profile: "TRAVELER_PROFILE",
   city: "QUIZ_CITY",
+  purpose: "QUIZ_TRIP_TYPE",
   length: "QUIZ_TRIP_LENGTH",
   budget: "QUIZ_BUDGET",
 };

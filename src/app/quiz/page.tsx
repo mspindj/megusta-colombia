@@ -10,6 +10,7 @@ import {
   CITY_GUIDES,
   scoreProfile,
   orderedMoves,
+  PURPOSE_LINES,
   type Answers,
   type CityId,
   type ProfileId,
@@ -44,7 +45,7 @@ export default function QuizPage() {
     }
     const result = scoreProfile(next);
     setProfileId(result);
-    track("trackCustom", "QuizComplete", { profile: result, city: next.city });
+    track("trackCustom", "QuizComplete", { profile: result, city: next.city, purpose: next.purpose });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -75,6 +76,7 @@ export default function QuizPage() {
           quiz: {
             profile: profileId,
             city: answers.city,
+            purpose: answers.purpose,
             length: answers.length,
             budget: answers.budget,
           },
@@ -99,7 +101,9 @@ export default function QuizPage() {
   if (profileId) {
     const profile = PROFILES[profileId];
     const guide = CITY_GUIDES[(answers.city as CityId) ?? "several"];
-    const longStay = answers.length === "month";
+    const purposeLine = answers.purpose ? PURPOSE_LINES[answers.purpose] : undefined;
+    // remote y moving ya traen su propia línea de estadía larga: no repetirla.
+    const longStay = answers.length === "month" && answers.purpose !== "moving" && answers.purpose !== "remote";
 
     return (
       <main className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] px-4 py-12 sm:py-16">
@@ -118,6 +122,8 @@ export default function QuizPage() {
             ))}
           </ul>
           <p className="text-[#c8c8c8] leading-7 mt-6 border-t border-white/10 pt-6">{profile.habit}</p>
+
+          {purposeLine && <p className="text-[#c8c8c8] leading-7 mt-4">{purposeLine}</p>}
 
           {longStay && (
             <p className="text-[#c8c8c8] leading-7 mt-4">
@@ -206,7 +212,7 @@ export default function QuizPage() {
           <div className="mb-10">
             <h1 className="text-3xl sm:text-4xl font-bold leading-tight">What kind of Colombia traveler are you?</h1>
             <p className="text-[#a0a0a0] mt-3 leading-7">
-              Six questions, two minutes. You get your traveler profile and the first moves that fit how you travel.
+              Seven questions, two minutes. You get your traveler profile and the first moves that fit how you travel.
             </p>
           </div>
         )}
