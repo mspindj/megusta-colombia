@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Accordion,
   AccordionContent,
@@ -455,6 +456,13 @@ export default function Home() {
             {leadStatus === "error" && (
               <p id="lead-error-hero" role="alert" className="text-xs text-destructive mt-2 text-center">{leadError}</p>
             )}
+
+            <p className="text-sm text-white/70 text-center mt-4">
+              Not sure where to start?{" "}
+              <Link href="/quiz" className="text-primary underline underline-offset-4 hover:text-[#e8c96a]">
+                Take the 2-minute traveler quiz
+              </Link>
+            </p>
 
           </motion.div>
           {showChevron && (
